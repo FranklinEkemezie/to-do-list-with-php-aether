@@ -1,0 +1,30 @@
+{
+    "/": {
+        "GET": {
+            "controller": "Home",
+            "handler": "index"
+        }
+    },
+    "/user/post/:id/edit": {
+        "GET": {
+            "controller": "Post",
+            "handler": "edit",
+            "params": {
+                "id": "string"
+            },
+            "auth": [true, "/login"]
+        }
+    },
+    "/user/login": {
+        "GET": {
+            "controller": "Auth",
+            "handler": "getLogin",
+            "auth": false
+        },
+        "POST": {
+            "controller": "Auth",
+            "handler": "getLogin",
+            "auth": [false, "/dashboard"]
+        }
+    }
+}

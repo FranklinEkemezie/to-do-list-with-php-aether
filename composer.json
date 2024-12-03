@@ -1,0 +1,20 @@
+{
+    "name": "franklin-ekemezie/php-aether",
+    "description": "PHP Aether - A lightweight, extensible framework brigding simplicity and power for modern web development",
+    "type": "library",
+    "license": "MIT License",
+    "autoload": {
+        "psr-4": {
+            "FranklinEkemezie\\PHPAether\\": "app/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Shadow Walker",
+            "email": "franklynpeter2006@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    }
+}
