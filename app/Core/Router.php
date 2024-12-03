@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace FranklinEkemezie\PHPAether\Core;
 
+use FranklinEkemezie\PHPAether\Controllers\ErrorController;
 use FranklinEkemezie\PHPAether\Exceptions\NotFoundException;
+use FranklinEkemezie\PHPAether\Middlewares\AuthMiddleware;
 
 class Router
 {
@@ -76,26 +78,39 @@ class Router
         return null;
     }
 
-    private static function getRouteControllerName(string $route, string $requestMethod, array $routesMap, array $requestArgs): ?string
+    private static function getRouteControllerName(string $route, string $requestMethod, array $routesMap): string
     {
         $routeInfo = $routesMap[$route][$requestMethod] ?? null;
-        if ($routeInfo === null) return null;
+        if ($routeInfo === null)
+            throw new NotFoundException("Route info not found for route: $route");
 
-        $controllerNamespace    = "FranklinEkemezie\\PHPAether\\Controllers";
-        $controller             = "{$routeInfo['controller']}Controller";
-        $controllerName         = "$controllerNamespace\\$controller";
+        $controllerNamespace = "FranklinEkemezie\\PHPAether\\Controllers";
+        $controller = $routeInfo['controller'] ?? null;
+        if ($controller === null)
+            throw new NotFoundException("No controller is found for the route: $route ($requestMethod)");
+
+        $controller .= 'Controller';
+        $controllerName = "$controllerNamespace\\$controller";
 
         return $controllerName;
     }
 
-    private static function getRouteHandler(string $route, string $requestMethod, array $routesMap, array $requestArgs): callable|false|null
+    /**
+     * Get the controller method handling the route
+     * @param string $route The route
+     * @param string $requestMethod The HTTP request method
+     * @param array $routesMap The route map
+     * @param array $requestArgs The arguments for HTTP request
+     * @return callable Returns a callable that return a response.
+     * @throws NotFoundException when route info or controller is not found
+     */
+    private static function getRouteHandler(string $route, string $requestMethod, array $routesMap, array $requestArgs): callable
     {
-        $routeInfo          = $routesMap[$route][$requestMethod] ?? null;
-        if ($routeInfo === null) return null;
+        $routeInfo = $routesMap[$route][$requestMethod] ?? null;
+        if ($routeInfo === null)
+            throw new NotFoundException("Route info not found for route: $route");
 
-        $controllerName     = self::getRouteControllerName($route, $requestMethod, $routesMap, $requestArgs);
-        if (! class_exists($controllerName)) return false;
-
+        $controllerName     = self::getRouteControllerName($route, $requestMethod, $routesMap);
         $handler            = $routeInfo['handler'];
         $controllerInstance = new $controllerName();
 
@@ -126,6 +141,11 @@ class Router
         return array_combine($keys, $values);
     }
 
+    private static function getRouteAuthInfo(string $route, string $requestMethod, array $routesMap): array|bool|null
+    {
+        return $routesMap[$route][$requestMethod]['auth'] ?? null;
+    }
+
     public function getRoutesMap(): ?array
     {
         
@@ -137,46 +157,39 @@ class Router
 
     public function route(Request $request): callable
     {
+        // Match the route, to check if it exists
         $routesMap = $this->getRoutesMap();
         $requestRoute = self::matchRequestPath($request->path, $routesMap);
         if ($requestRoute === null) {
-            // TODO: Replace with Not Found Error Controller
-            http_response_code(404);
-            echo 'Not Found <br/>';
 
-            return fn(): Response => new Response();
+            // Route not found
+            return [ErrorController::class, 'notFound'];
         }
 
+        // Check if the method is allowed
         $allowedMethods = self::getAllowedMethods($requestRoute, $routesMap);
         if (! in_array($request->method, $allowedMethods)) {
-            // TODO: Replace with Method Not Allowed Error Controller
-            http_response_code(405);
-            echo 'Request method not allowed <br/>';
-            header("Allow: {$allowedMethods[0]}");
 
-            return fn(): Response => new Response();
+            // Internal Server Error
+            return fn() => call_user_func_array(
+                [ErrorController::class, 'methodNotAllowed'],
+                ['allowedMethods' => $allowedMethods]
+            );
         }
 
+        // Check for authentication
+        if (
+            // Check if authentication is required for the route
+            self::getRouteAuthInfo($requestRoute, $request->method, $routesMap) &&
+
+            // Resolve authentication via middleware
+            ($authRes = (new AuthMiddleware)->handle($request)) !== true
+        ) 
+            return $authRes;
+
+        // Get the handler for the route
         $requestArgs = self::getRequestArgs($request->path, $request->method, $requestRoute, $routesMap[$requestRoute]);
-
         $routeHandler = self::getRouteHandler($requestRoute, $request->method, $routesMap, $requestArgs);
-        if ($routeHandler === null) {
-            // TODO: Return an error controller handler
-            // No controller can handle the request now
-            echo 'No controller can handle the current request now <br/>';
-
-            return fn(): Response => new Response();
-
-        } else if ($routeHandler === false) {
-            // TODO: Error controller to handle this
-            http_response_code(500);
-
-            $controllerName = $routesMap[$requestRoute][$request->method]['controller'];
-            echo "You don't have {$controllerName}Controller to handle this request <br/>";
-            echo "Run php aether create:controller $controllerName to create it<br/>";
-
-            return fn(): Response => new Response();
-        }
 
         return $routeHandler;
     }

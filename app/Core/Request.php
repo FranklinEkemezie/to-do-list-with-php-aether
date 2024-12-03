@@ -27,6 +27,12 @@ class Request
      */
     private string $method;
 
+    /**
+     * The authentication token
+     * @var string
+     */
+    private ?string $authToken;
+
     private array $GET;
     private array $POST;
     private array $SESSION;
@@ -37,10 +43,24 @@ class Request
         $this->path     = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $this->method   = strtoupper($_SERVER['REQUEST_METHOD']);
 
+        $this->authToken= self::getAuthToken();
+
         $this->GET      = $_GET;
         $this->POST     = $_POST;
         $this->SESSION  = $_SESSION;
         $this->COOKIES  = $_COOKIE;
+    }
+
+    private static function getAuthToken(): ?string
+    {
+
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        if ($authHeader === null) return null;
+
+        $authToken  = str_replace('Bearer ', '', $authHeader);
+        if ($authToken === '') return null;
+
+        return $authToken;
     }
 
     public function isGet(): bool
