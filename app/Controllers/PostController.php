@@ -6,7 +6,7 @@ namespace FranklinEkemezie\PHPAether\Controllers;
 
 use FranklinEkemezie\PHPAether\Core\Response;
 
-class PostController extends Controller
+class PostController extends BaseController
 {
 
     public function edit(string $id): Response

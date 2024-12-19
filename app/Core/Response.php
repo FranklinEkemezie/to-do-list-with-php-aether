@@ -11,6 +11,6 @@ class Response
     public function __toString(): string
     {
         
-        return "Response object here";
+        return "<p>Response object here</p>";
     }
 }

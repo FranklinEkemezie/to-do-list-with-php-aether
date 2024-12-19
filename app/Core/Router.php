@@ -178,15 +178,39 @@ class Router
         }
 
         // Check for authentication
+        $routeAuthInfo  = self::getRouteAuthInfo($requestRoute, $request->method, $routesMap);
+        $authIsRequired = function(array|bool|null $routeAuthInfo) {
+            if ($routeAuthInfo === null)
+                return false;
+            else if (
+                is_array($routeAuthInfo) &&
+                !empty($routeAuthInfo) &&
+                is_bool($routeAuthInfo[0])
+            )
+                return $routeAuthInfo[0];
+            else if (is_bool($routeAuthInfo))
+                return $routeAuthInfo;
+        };
+        $authIsRequired = $authIsRequired($routeAuthInfo);
+        
         if (
             // Check if authentication is required for the route
-            self::getRouteAuthInfo($requestRoute, $request->method, $routesMap) &&
+            $authIsRequired &&
 
-            // Resolve authentication via middleware
+            // Resolve authentication via middleware, if any
             ($authRes = (new AuthMiddleware)->handle($request)) !== true
         ) 
             return $authRes;
+        else if (
+            // when authentication is not required
+            ! $authIsRequired &&
 
+            // but, no need to continue with the current request if authenticated already
+            (is_array($routeAuthInfo) && ($redirectUrl = $routeAuthInfo[1] ?? null))
+        )   // TODO: Have redirect helper function
+            header("Location: $redirectUrl");
+
+        
         // Get the handler for the route
         $requestArgs = self::getRequestArgs($request->path, $request->method, $requestRoute, $routesMap[$requestRoute]);
         $routeHandler = self::getRouteHandler($requestRoute, $request->method, $routesMap, $requestArgs);

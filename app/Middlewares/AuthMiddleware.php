@@ -16,7 +16,7 @@ class AuthMiddleware extends Middleware
         private ?AuthServiceInterface $authService=null
     )
     {
-        $this->authService ??= new JWTAuthService;
+        $this->authService ??= new JWTAuthService();
     }
 
     /**

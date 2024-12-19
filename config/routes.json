@@ -5,6 +5,18 @@
             "handler": "index"
         }
     },
+    "/login": {
+        "GET": {
+            "controller": "Auth",
+            "handler": "getLogin",
+            "auth": [false, "/user/login"]
+        },
+        "POST": {
+            "controller": "Auth",
+            "handler": "login",
+            "auth": false
+        }
+    },
     "/user/post/:id/edit": {
         "GET": {
             "controller": "Post",

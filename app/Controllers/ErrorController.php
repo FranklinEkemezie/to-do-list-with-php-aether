@@ -6,7 +6,7 @@ namespace FranklinEkemezie\PHPAether\Controllers;
 
 use FranklinEkemezie\PHPAether\Core\Response;
 
-abstract class ErrorController extends Controller
+abstract class ErrorController extends BaseController
 {
 
     public static function  notFound(): Response

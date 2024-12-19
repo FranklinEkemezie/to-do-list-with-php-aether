@@ -6,6 +6,7 @@ namespace FranklinEkemezie\PHPAether\Core;
 
 use FranklinEkemezie\PHPAether\Exceptions\DatabaseException;
 use FranklinEkemezie\PHPAether\Exceptions\UndefinedException;
+use FranklinEkemezie\PHPAether\Utils\QueryBuilder\QueryBuilder;
 use PDO;
 
 /**
@@ -74,16 +75,32 @@ class Database
             static::$dbConn = $dbConn;
 
         } catch (\PDOException $e) {
-
             throw new DatabaseException("Database connection failed: {$e->getMessage()}");
         }
         
+    }
+
+    public function getDB(): self
+    {
+        return $this;
+    }
+
+
+    public function executeSQLQuery(QueryBuilder $query): mixed
+    {
+        if ($query->type === 'select')
+            return $this->query((string) $query)?->fetchAll() ?? null;
+        else
+            return $this->exec((string) $query);
     }
 
     // Proxy database calls to PDO
     public function __call(string $method, array $args)
     {
         if (method_exists(static::$dbConn, $method)) {
+            var_dump($args);
+            return null;
+            
             return call_user_func_array([static::$dbConn, $method], $args);
         }
 

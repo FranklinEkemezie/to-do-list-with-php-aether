@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FranklinEkemezie\PHPAether\Services\AuthServices;
 
+use FranklinEkemezie\PHPAether\Entities\AbstractEntities\Authenticable;
+
 interface AuthServiceInterface
 {
 
@@ -11,15 +13,17 @@ interface AuthServiceInterface
      * Authenticate a user
      * @return bool
      */
-    public function authenticate(): bool;
+    public function authenticate(Authenticable $user): bool;
 
 
     /**
      * Generate an authentication token for a given user
      * after successful login
+     * @param int|string $userId The ID of the user
+     * @param int $expiresAfter The number of seconds after which the token expires
      * @return string
      */
-    public function generateToken(): string;
+    public function generateToken(int|string $userId, int $expiresAfter=24*60*60): string;
 
 
     /**

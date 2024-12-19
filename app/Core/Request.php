@@ -73,6 +73,12 @@ class Request
         return $this->method === 'POST';
     }
 
+    public function redirect(string $newUrl): void
+    {
+        header("Location: $newUrl");
+        exit;
+    }
+
     public function __get(string $name): mixed
     {
         if (property_exists($this, $name)) {
