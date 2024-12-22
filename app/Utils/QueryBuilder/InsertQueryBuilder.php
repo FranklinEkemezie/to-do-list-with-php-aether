@@ -55,7 +55,6 @@ class InsertQueryBuilder extends QueryBuilder
     }
 
     // Build methods
-
     private function buildColumns(): string
     {
         if (! isset($this->columns))

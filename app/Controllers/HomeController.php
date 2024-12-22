@@ -32,9 +32,8 @@ class HomeController extends BaseController
             ])
         ;
 
-        echo "<p>$deleteQuery</p>";
-
+        $body = (string) $deleteQuery;
     
-        return new Response;
+        return new Response(body: $body);
     }
 }

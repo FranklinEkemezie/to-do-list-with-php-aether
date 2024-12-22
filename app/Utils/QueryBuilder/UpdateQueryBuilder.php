@@ -28,7 +28,6 @@ class UpdateQueryBuilder extends QueryBuilder
     }
 
     // Build methods
-
     public function buildUpdates(): string
     {
         $updateValues = $this->values;
@@ -36,9 +35,7 @@ class UpdateQueryBuilder extends QueryBuilder
             function(string $column) use ($updateValues): string {
                 $value = $updateValues[$column];
 
-                if (is_string($value))
-                    $value = "'$value'";
-
+                if (is_string($value)) $value = "'$value'";
                 return "$column = $value";
             }, 
             array_keys($updateValues)

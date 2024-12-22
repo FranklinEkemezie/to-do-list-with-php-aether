@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FranklinEkemezie\PHPAether\Utils;
 
-class Collection
+class Dictionary
 {
 
 
