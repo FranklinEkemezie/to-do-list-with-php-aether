@@ -7,6 +7,7 @@ use FranklinEkemezie\PHPAether\Core\App;
 use FranklinEkemezie\PHPAether\Core\Database;
 use FranklinEkemezie\PHPAether\Core\Request;
 use FranklinEkemezie\PHPAether\Core\Router;
+use FranklinEkemezie\PHPAether\Utils\ConfigManager;
 
 // Define the home directory
 define('APP_DIR', dirname(__DIR__));
@@ -23,11 +24,16 @@ session_start();
 // Get App Config
 define('APP_CONFIG', require APP_DIR . "/config/config.php");
 
-$request = new Request();
-$router = new Router(APP_DIR . '/config/routes.json');
+$config     = (new ConfigManager())
+    ->setArray('db', APP_CONFIG['DB_CONFIG'] ?? [])
+;
+
+$request    = new Request();
+$router     = new Router(APP_DIR . '/config/routes.json');
+$database   = new Database($config->db);
 
 // Initialise an application instance
-$app = new App($router);
+$app = new App($router, $database);
 
 // Run the application
 try {
@@ -51,18 +57,3 @@ try {
 }
 
 echo $response;
-
-$dbConfig = [
-    'driver'    => $_ENV['DB_DRIVER'],
-    'host'      => $_ENV['DB_HOST'],
-    'database'  => $_ENV['DB_DATABASE'],
-    'username'  => $_ENV['DB_USERNAME'],
-    'password'  => $_ENV['DB_PASSWORD']
-];
-
-/**
- * @var PDO
- */
-$db1 = new Database($dbConfig);
-$db2 = new Database($dbConfig);
-$db3 = new Database($dbConfig);

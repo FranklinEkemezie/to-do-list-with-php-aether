@@ -96,15 +96,16 @@ class Router
     }
 
     /**
-     * Get the controller method handling the route
+     * Get the name of the controller and the method handling the route
      * @param string $route The route
      * @param string $requestMethod The HTTP request method
      * @param array $routesMap The route map
      * @param array $requestArgs The arguments for HTTP request
-     * @return callable Returns a callable that return a response.
+     * @return array Returns a two item array [`$controllerName`, `$handler`] which consists of the
+     * name of the controller and the method handling the route.
      * @throws NotFoundException when route info or controller is not found
      */
-    private static function getRouteHandler(string $route, string $requestMethod, array $routesMap, array $requestArgs): callable
+    private static function getRouteHandler(string $route, string $requestMethod, array $routesMap): array
     {
         $routeInfo = $routesMap[$route][$requestMethod] ?? null;
         if ($routeInfo === null)
@@ -112,9 +113,8 @@ class Router
 
         $controllerName     = self::getRouteControllerName($route, $requestMethod, $routesMap);
         $handler            = $routeInfo['handler'];
-        $controllerInstance = new $controllerName();
 
-        return fn(): Response => call_user_func_array( [$controllerInstance, $handler], $requestArgs);
+        return [$controllerName, $handler];
     }
 
     private static function getRequestArgs(string $requestPath, string $requestMethod, string $matchedRoute, array $routeInfo): array
@@ -179,7 +179,7 @@ class Router
 
         // Check for authentication
         $routeAuthInfo  = self::getRouteAuthInfo($requestRoute, $request->method, $routesMap);
-        $authIsRequired = function(array|bool|null $routeAuthInfo) {
+        $authIsRequired = function(array|bool|null $routeAuthInfo): bool {
             if ($routeAuthInfo === null)
                 return false;
             else if (
@@ -190,9 +190,11 @@ class Router
                 return $routeAuthInfo[0];
             else if (is_bool($routeAuthInfo))
                 return $routeAuthInfo;
+            else
+                return false;
         };
+
         $authIsRequired = $authIsRequired($routeAuthInfo);
-        
         if (
             // Check if authentication is required for the route
             $authIsRequired &&
@@ -213,8 +215,13 @@ class Router
         
         // Get the handler for the route
         $requestArgs = self::getRequestArgs($request->path, $request->method, $requestRoute, $routesMap[$requestRoute]);
-        $routeHandler = self::getRouteHandler($requestRoute, $request->method, $routesMap, $requestArgs);
+        $routeHandler = self::getRouteHandler($requestRoute, $request->method, $routesMap);
 
-        return $routeHandler;
+        return function (Database $database) use ($routeHandler, $requestArgs): Response {
+            [$controllerName, $controllerMethod] = $routeHandler;
+            $controllerInstance = new $controllerName($database);
+            
+            return call_user_func([$controllerInstance, $controllerMethod], $requestArgs);
+        };
     }
 }

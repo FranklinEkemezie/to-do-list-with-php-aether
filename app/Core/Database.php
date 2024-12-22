@@ -6,6 +6,7 @@ namespace FranklinEkemezie\PHPAether\Core;
 
 use FranklinEkemezie\PHPAether\Exceptions\DatabaseException;
 use FranklinEkemezie\PHPAether\Exceptions\UndefinedException;
+use FranklinEkemezie\PHPAether\Utils\Dictionary;
 use FranklinEkemezie\PHPAether\Utils\QueryBuilder\QueryBuilder;
 use PDO;
 
@@ -33,26 +34,30 @@ class Database
      * - `username` - The name of the database user
      * - `password` - The password of the database user
      */
-    public function __construct(array $dbConfig)
+    public function __construct(array|Dictionary $dbConfig, array $options=[])
     {
-
         if (isset(static::$dbConn))
             return;
 
         // Get the database config data
-        $driver     = $dbConfig['driver'] ?? null;
-        $host       = $dbConfig['host'] ?? null;
-        $port       = $dbConfig['port'] ?? 3306;
-        $database   = $dbConfig['database'] ?? null;
-        $username   = $dbConfig['username'] ?? null;
-        $password   = $dbConfig['password'] ?? null;
-        $options    = $dbConfig['options'] ?? [];
+        $getConfig = fn(string $name, mixed $defaultValue=null): mixed => 
+            is_array($dbConfig) ?
+                ($dbConfig[$name] ?? $defaultValue) :
+                ($dbConfig?->$name ?? $defaultValue)
+        ;
+
+        $driver     = $getConfig('driver');
+        $host       = $getConfig('host');
+        $port       = $getConfig('port', 3306);
+        $database   = $getConfig('database');
+        $username   = $getConfig('username');
+        $password   = $getConfig('password');
 
         if ($port !== null) $host .= ":$port";
 
         $dbConfigIsValid = array_reduce(
             [$driver, $host, $database, $username, $password],
-            function(bool $carry, string $item): bool {
+            function(bool $carry, mixed $item): bool {
                 if ($carry === false) return false;
                 return $item !== null;
             },
@@ -88,7 +93,7 @@ class Database
 
     public function executeSQLQuery(QueryBuilder $query): mixed
     {
-        if ($query->type === 'select')
+        if ($query->getType() === 'select')
             return $this->query((string) $query)?->fetchAll() ?? null;
         else
             return $this->exec((string) $query);
@@ -98,9 +103,6 @@ class Database
     public function __call(string $method, array $args)
     {
         if (method_exists(static::$dbConn, $method)) {
-            var_dump($args);
-            return null;
-            
             return call_user_func_array([static::$dbConn, $method], $args);
         }
 
