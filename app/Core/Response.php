@@ -21,6 +21,7 @@ class Response
     public function __construct(
         int $statusCode=200,
         ?string $reasonPhrase=null,
+        ?string $responseType=null,
         ?string $body=null
     )
     {
@@ -31,7 +32,7 @@ class Response
 
         $this->statusCode = $statusCode;
         $this->reasonPhrase = $reasonPhrase ?? $defaultReasonPhrase;
-        $this->body = $body;
+        $this->body = $body ?? '';
         $this->headers = [];
         $this->cookies = [];
     }
