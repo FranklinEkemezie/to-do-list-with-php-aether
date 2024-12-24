@@ -8,10 +8,13 @@ use FranklinEkemezie\PHPAether\Controllers\ErrorController;
 use FranklinEkemezie\PHPAether\Exceptions\NotFoundException;
 use FranklinEkemezie\PHPAether\Middlewares\AuthMiddleware;
 
+use function FranklinEkemezie\PHPAether\Utils\dump;
+use function FranklinEkemezie\PHPAether\Utils\redirect;
+
 class Router
 {
 
-    private const REQUEST_PARAMS_REGEX = '@/(:([a-zA-Z_-]+))/@';
+    private const REQUEST_PARAMS_REGEX = '@(:([a-zA-Z_-]+))@';
 
     public function __construct(
         private string $routeMapFile
@@ -26,8 +29,9 @@ class Router
     private static function getRouteRegex(string $route, string $requestMethod, array $routeInfo): string
     {
         // Match the parameters
-        preg_match_all(self::REQUEST_PARAMS_REGEX, $route, $matches);
-        $matchedParams = !empty($matches[0]) ? $matches[2] : [];
+        $matchedParams = preg_match_all(
+            self::REQUEST_PARAMS_REGEX, $route, $matches
+        ) !== 0 ? $matches[2] : [];
 
         $paramsRegex = array_map(function ($param) use ($routeInfo, $requestMethod) {
             $paramType = $routeInfo[$requestMethod]['params'][$param] ?? null;
@@ -55,11 +59,18 @@ class Router
         return array_keys($routeInfo);
     }
 
+    /**
+     * Match the request path to appropriate route in the give route map
+     * @param string $requestPath The request path to match
+     * @param array $routesMap The route map
+     * @param mixed $requestMethod The request method used to access the path
+     * @return string|null Returns the right route or `null` if not found
+     */
     private static function matchRequestPath(string $requestPath, array $routesMap, ?string $requestMethod=null): ?string
     {
         foreach($routesMap as $route => $routeInfo) {
-            // Match the URL with the right pattern
 
+            // Match the URL with the right pattern
             if ($requestMethod !== null) {
                 return preg_match(
                     self::getRouteRegex($route, $requestMethod, $routeInfo),
@@ -69,9 +80,8 @@ class Router
 
             // Check for each available method
             foreach($routeInfo as $method => $_) {
-                if (preg_match(self::getRouteRegex($route, $method, $routeInfo),$requestPath)) {
+                if (preg_match(self::getRouteRegex($route, $method, $routeInfo),$requestPath))
                     return $route;
-                }
             }
         }
 
@@ -146,6 +156,49 @@ class Router
         return $routesMap[$route][$requestMethod]['auth'] ?? null;
     }
 
+    private static function isAuthRequiredForRoute(array|bool|null $routeAuthInfo): bool
+    {
+        if ($routeAuthInfo === null)                        # not provided, hence not required.
+            return false;
+        else if (is_bool($routeAuthInfo))
+            return $routeAuthInfo;
+        else if (is_bool($routeAuthInfo[0] ?? null)) # in the form: [<bool>] or [<bool>, ...]
+            return $routeAuthInfo[1];
+        else
+            return false;
+    }
+
+    /**
+     * Resolves the authentication
+     * @param \FranklinEkemezie\PHPAether\Core\Request $request The request to resolve the authentication
+     * @param array|bool|null $routeAuthInfo The route authentication info
+     * @return callable|null Returns `callable` (which returns a `Response`) if something goes wrong or 
+     * `true` if authentication is resolved successfully
+     */
+    private static function resolveAuth(Request $request, array|bool|null $routeAuthInfo): callable|true
+    {
+        $authIsRequired = self::isAuthRequiredForRoute($routeAuthInfo);
+        if (
+            // Check if authentication is required for the route
+            $authIsRequired &&
+
+            // Resolve authentication via middleware, if any:
+            // If a callable is returned somethin went wrong.
+            is_callable($authRes = (new AuthMiddleware)->handle($request))
+        ) 
+            return $authRes;
+        else if (
+            // when authentication is not required
+            ! $authIsRequired &&
+
+            // but, no need to continue with the current request if authenticated already
+            (is_array($routeAuthInfo) && ($redirectUrl = $routeAuthInfo[1] ?? null))
+        )
+            redirect($redirectUrl);
+
+        return true;
+    }
+
     public function getRoutesMap(): ?array
     {
         
@@ -177,51 +230,21 @@ class Router
             );
         }
 
-        // Check for authentication
+        // Resolve authentication
         $routeAuthInfo  = self::getRouteAuthInfo($requestRoute, $request->method, $routesMap);
-        $authIsRequired = function(array|bool|null $routeAuthInfo): bool {
-            if ($routeAuthInfo === null)
-                return false;
-            else if (
-                is_array($routeAuthInfo) &&
-                !empty($routeAuthInfo) &&
-                is_bool($routeAuthInfo[0])
-            )
-                return $routeAuthInfo[0];
-            else if (is_bool($routeAuthInfo))
-                return $routeAuthInfo;
-            else
-                return false;
-        };
-
-        $authIsRequired = $authIsRequired($routeAuthInfo);
-        if (
-            // Check if authentication is required for the route
-            $authIsRequired &&
-
-            // Resolve authentication via middleware, if any
-            ($authRes = (new AuthMiddleware)->handle($request)) !== true
-        ) 
+        if (is_callable($authRes = self::resolveAuth($request, $routeAuthInfo))) {
             return $authRes;
-        else if (
-            // when authentication is not required
-            ! $authIsRequired &&
-
-            // but, no need to continue with the current request if authenticated already
-            (is_array($routeAuthInfo) && ($redirectUrl = $routeAuthInfo[1] ?? null))
-        )   // TODO: Have redirect helper function
-            header("Location: $redirectUrl");
-
+        }
         
         // Get the handler for the route
         $requestArgs = self::getRequestArgs($request->path, $request->method, $requestRoute, $routesMap[$requestRoute]);
         $routeHandler = self::getRouteHandler($requestRoute, $request->method, $routesMap);
 
-        return function (Database $database) use ($routeHandler, $requestArgs): Response {
+        return function (Database $database) use ($routeHandler, $requestArgs, $request): Response {
             [$controllerName, $controllerMethod] = $routeHandler;
-            $controllerInstance = new $controllerName($database);
+            $controllerInstance = new $controllerName($request, $database);
             
-            return call_user_func([$controllerInstance, $controllerMethod], $requestArgs);
+            return call_user_func_array([$controllerInstance, $controllerMethod], $requestArgs);
         };
     }
 }
