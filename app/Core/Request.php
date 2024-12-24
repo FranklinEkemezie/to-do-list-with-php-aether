@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FranklinEkemezie\PHPAether\Core;
 
 use FranklinEkemezie\PHPAether\Exceptions\UndefinedException;
+use FranklinEkemezie\PHPAether\Utils\Dictionary;
 
 /**
  * Request class
@@ -33,10 +34,10 @@ class Request
      */
     private ?string $authToken;
 
-    private array $GET;
-    private array $POST;
-    private array $SESSION;
-    private array $COOKIES;
+    private Dictionary $GET;
+    private Dictionary $POST;
+    private Dictionary $SESSION;
+    private Dictionary $COOKIES;
 
     public function __construct()
     {
@@ -45,10 +46,10 @@ class Request
 
         $this->authToken= self::getAuthToken();
 
-        $this->GET      = $_GET;
-        $this->POST     = $_POST;
-        $this->SESSION  = $_SESSION;
-        $this->COOKIES  = $_COOKIE;
+        $this->GET      = new Dictionary($_GET);
+        $this->POST     = new Dictionary($_POST);
+        $this->SESSION  = new Dictionary($_SESSION);
+        $this->COOKIES  = new Dictionary($_COOKIE);
     }
 
     private static function getAuthToken(): ?string
