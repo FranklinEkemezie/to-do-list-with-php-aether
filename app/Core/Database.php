@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FranklinEkemezie\PHPAether\Core;
 
 use FranklinEkemezie\PHPAether\Exceptions\DatabaseException;
+use FranklinEkemezie\PHPAether\Exceptions\DuplicateEntryException;
 use FranklinEkemezie\PHPAether\Exceptions\UndefinedException;
 use FranklinEkemezie\PHPAether\Utils\Dictionary;
 use FranklinEkemezie\PHPAether\Utils\QueryBuilder\QueryBuilder;
@@ -93,10 +94,28 @@ class Database
 
     public function executeSQLQuery(QueryBuilder $query): mixed
     {
-        if ($query->getType() === 'select')
-            return $this->query((string) $query)?->fetchAll() ?? null;
-        else
-            return $this->exec((string) $query);
+        try {
+            if ($query->getType() === 'select')
+                return $this->query((string) $query)?->fetchAll() ?? null;
+            else
+                return $this->exec((string) $query);
+        } catch (\PDOException $e) {
+            $message = $e->getMessage();
+            $code = (int) $e->getCode();
+
+            // Check for duplicate error (for MySQL)
+            $pattern = "/^SQLSTATE\[(\d+)\]: Integrity constraint violation: (\d+) Duplicate entry '(.*)' for key '(.*)'$/";
+            if (preg_match($pattern, $message, $matches) === 1) {
+                [ , $code_, , $value, $key] = $matches;
+
+                throw new DuplicateEntryException(
+                    "Database Exception: Duplicate entry '$value' for key '$key'",
+                    (int) $code_
+                );
+            }
+
+            throw new DatabaseException("Database Exception: $message", (int) $code);
+        } 
     }
 
     // Proxy database calls to PDO
