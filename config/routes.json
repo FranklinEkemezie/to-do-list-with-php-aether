@@ -38,5 +38,27 @@
             "handler": "getLogin",
             "auth": [false, "/dashboard"]
         }
+    },
+
+    "/books": {
+        "GET": {
+            "controller": "Book",
+            "handler": "getBooks"
+        }
+    },
+    "/book/add": {
+        "POST": {
+            "controller": "Book",
+            "handler": "addBook"
+        }
+    },
+    "/book/:isbn": {
+        "GET": {
+            "controller": "Book",
+            "handler": "getBook",
+            "params": {
+                "isbn": "string"
+            }
+        }
     }
 }

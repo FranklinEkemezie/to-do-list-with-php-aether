@@ -14,6 +14,7 @@ define('APP_DIR', dirname(__DIR__));
 
 // Include Composer autoloader
 require APP_DIR . "/vendor/autoload.php";
+require APP_DIR . "/app/Utils/helpers.php";
 
 // Start session
 session_start();
