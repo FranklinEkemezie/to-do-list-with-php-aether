@@ -9,6 +9,7 @@ use FranklinEkemezie\PHPAether\Exceptions\QueryBuilderException;
 abstract class QueryBuilder
 {
 
+    // Query TYPE
     public const TYPE_SELECT = 'select';
     public const TYPE_INSERT = 'insert';
     public const TYPE_UPDATE = 'update';
@@ -18,13 +19,21 @@ abstract class QueryBuilder
     protected array $whereCondition;
     protected array $params = [];
 
+    /**
+     * 
+     * @param string $queryType
+     * @return \FranklinEkemezie\PHPAether\Utils\QueryBuilder\QueryBuilder
+     */
     public static function build(string $queryType): QueryBuilder
     {
         return match(strtolower($queryType)) {
-            'select' => new SelectQueryBuilder(),
-            'insert' => new InsertQueryBuilder(),
-            'update' => new UpdateQueryBuilder(),
-            'delete' => new DeleteQueryBuilder()
+            static::TYPE_SELECT => new SelectQueryBuilder(),
+            static::TYPE_INSERT => new InsertQueryBuilder(),
+            static::TYPE_UPDATE => new UpdateQueryBuilder(),
+            static::TYPE_DELETE => new DeleteQueryBuilder(),
+            default  => throw new QueryBuilderException(
+                "Invalid or unsupported query type - $queryType"
+            )
         };
     }
 
