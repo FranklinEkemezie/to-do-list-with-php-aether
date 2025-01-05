@@ -59,6 +59,14 @@ class InsertQueryBuilder extends QueryBuilder
         return $this->values;
     }
 
+    public function getParams(): array
+    {
+        return array_reduce($this->values, function(array $params, array $values) {
+            $params[] = array_combine($this->columns, $values);
+            return $params;
+        }, []);
+    }
+
     // Build methods
     private function buildColumns(): string
     {
@@ -73,13 +81,10 @@ class InsertQueryBuilder extends QueryBuilder
         if (! isset($this->values))
             throw new QueryBuilderException('Query values not set.');
 
-        return join(', ', array_map(
-            fn(array $values): string => "(" . join(', ', array_map(
-                fn(string $value, string $column): string => ":$column",
-                $values, $this->columns
-            )) . ")",
-            $this->values
-        ));
+        return "(" . join(', ', array_map(
+            fn(string $value, string $column): string => ":$column",
+            $this->values[0], $this->columns
+        )) . ")";
     }
 
     public function buildSQL(): string
