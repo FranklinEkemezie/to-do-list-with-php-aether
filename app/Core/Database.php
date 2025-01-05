@@ -4,12 +4,24 @@ declare(strict_types=1);
 
 namespace FranklinEkemezie\PHPAether\Core;
 
-use FranklinEkemezie\PHPAether\Exceptions\DatabaseException;
-use FranklinEkemezie\PHPAether\Exceptions\DuplicateEntryException;
-use FranklinEkemezie\PHPAether\Exceptions\UndefinedException;
-use FranklinEkemezie\PHPAether\Utils\Dictionary;
-use FranklinEkemezie\PHPAether\Utils\QueryBuilder\QueryBuilder;
-use PDO;
+use FranklinEkemezie\PHPAether\Exceptions\{
+    DatabaseException,
+    DuplicateEntryException,
+    UndefinedException
+};
+use FranklinEkemezie\PHPAether\Utils\{
+    Collection,
+    Dictionary
+};
+use FranklinEkemezie\PHPAether\Utils\QueryBuilder\{
+    QueryBuilder,
+    SelectQueryBuilder,
+    InsertQueryBuilder,
+    UpdateQueryBuilder,
+    DeleteQueryBuilder
+};
+
+use \PDO;
 
 /**
  * Database class
@@ -92,30 +104,89 @@ class Database
     }
 
 
-    public function executeSQLQuery(QueryBuilder $query): mixed
+    /**
+     * Summary of executeSQLQuery
+     * @param SelectQueryBuilder|InsertQueryBuilder|UpdateQueryBuilder|DeleteQueryBuilder $query
+     * @param bool $fetchAll
+     * @throws \FranklinEkemezie\PHPAether\Exceptions\DatabaseException
+     * @throws \FranklinEkemezie\PHPAether\Exceptions\DuplicateEntryException
+     * @return \FranklinEkemezie\PHPAether\Utils\Collection|\FranklinEkemezie\PHPAether\Utils\Dictionary|null|true
+     */
+    public function executeSQLQuery(
+        QueryBuilder $query,
+        bool $fetchAll=true
+    ): Collection|Dictionary|null|true
     {
+
         try {
-            if ($query->getType() === 'select')
-                return $this->query((string) $query)?->fetchAll() ?? null;
-            else
-                return $this->exec((string) $query);
+            /** @var \PDOStatement */
+            $stmt = $this->prepare($query->buildQuery(true));
+
+            switch ($query->getType()) {
+                // For SELECT statements
+                case QueryBuilder::TYPE_SELECT:
+                    $stmt->execute($query->getParams());
+
+                    if (! $fetchAll) {
+                        $res = $stmt->fetch() ?: null;
+                        return $res !== null ? new Dictionary($res) : null;
+                    }
+
+                    $res = $stmt->fetchAll();
+                    return ! empty($res) ? new Collection(...$res) : null;
+                
+                // For INSERT statements
+                case QueryBuilder::TYPE_INSERT:
+                    foreach($query->getParams() as $params) {
+                        $stmt->execute($params);
+                    }
+                    return true; 
+                           
+                // For UPDATE and DELETE statements
+                case QueryBuilder::TYPE_UPDATE:
+                case QueryBuilder::TYPE_DELETE:
+                    return $stmt->execute($query->getParams());
+                
+                // Invalid/Unsupported statements
+                default:
+                    throw new DatabaseException("Invalid/Unsupported SQL query: {$query->getType()}");
+            }
+                
         } catch (\PDOException $e) {
-            $message = $e->getMessage();
-            $code = (int) $e->getCode();
-
             // Check for duplicate error (for MySQL)
-            $pattern = "/^SQLSTATE\[(\d+)\]: Integrity constraint violation: (\d+) Duplicate entry '(.*)' for key '(.*)'$/";
-            if (preg_match($pattern, $message, $matches) === 1) {
-                [ , $code_, , $value, $key] = $matches;
-
+            if ($exceptionInfo = static::isDuplicateEntryException($e)) {
                 throw new DuplicateEntryException(
-                    "Database Exception: Duplicate entry '$value' for key '$key'",
-                    (int) $code_
+                    "Database Exception: Duplicate entry '{$exceptionInfo['value']}' for key '{$exceptionInfo['key']}'",
+                    (int) $exceptionInfo['code']
                 );
             }
 
-            throw new DatabaseException("Database Exception: $message", (int) $code);
+            throw new DatabaseException(
+                "Database Exception: {$e->getMessage()}", (int) $e->getCode()
+            );
         } 
+    }
+
+    /**
+     * Check if the exception thrown during a database operation is caused by
+     * MySQL duplicate entry constrainst
+     * @param \PDOException $e The exception
+     * 
+     */
+    protected static function isDuplicateEntryException(\PDOException $e): array|false
+    {
+        $message = $e->getMessage();
+        $pattern = "/^SQLSTATE\[(\d+)\]: Integrity constraint violation: (\d+) Duplicate entry '(.*)' for key '(.*)'$/";
+
+        if (preg_match($pattern, $message, $matches) !== 1)
+            return false;
+
+        [ , $code, , $value, $key] = $matches;
+        return [
+            'code'  => $code,
+            'key'   => $key,
+            'value' => $value
+        ];
     }
 
     // Proxy database calls to PDO
