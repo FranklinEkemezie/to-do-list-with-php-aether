@@ -8,6 +8,7 @@ use FranklinEkemezie\PHPAether\Core\Database;
 use FranklinEkemezie\PHPAether\Core\Request;
 use FranklinEkemezie\PHPAether\Core\Router;
 use FranklinEkemezie\PHPAether\Utils\ConfigManager;
+use FranklinEkemezie\PHPAether\Utils\Dictionary;
 
 // Define the home directory
 define('APP_DIR', dirname(__DIR__));
@@ -34,7 +35,11 @@ $router     = new Router(APP_DIR . '/config/routes.json');
 $database   = new Database($config->db);
 
 // Initialise an application instance
-$app = new App($router, $database);
+$app = new App(
+    $router, 
+    $database, 
+    new Dictionary($_ENV)
+);
 
 // Run the application
 try {
