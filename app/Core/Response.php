@@ -22,7 +22,8 @@ class Response
         int $statusCode=200,
         ?string $reasonPhrase=null,
         ?string $responseType=null,
-        ?string $body=null
+        ?string $body=null,
+        ?array $headers=[]
     )
     {
         $defaultReasonPhrase = self::getDefaultReasonPhrase($statusCode);
@@ -33,7 +34,13 @@ class Response
         $this->statusCode = $statusCode;
         $this->reasonPhrase = $reasonPhrase ?? $defaultReasonPhrase;
         $this->body = $body ?? '';
-        $this->headers = [];
+
+        $defaultHeaders = [
+            "Content-Type" => $responseType ?? 'application/json',
+            "Access-Control-Allow-Origin" => '*'
+        ];
+
+        $this->headers = array_merge($headers, $defaultHeaders);
         $this->cookies = [];
     }
 
@@ -47,7 +54,9 @@ class Response
             401 => 'Unauthorized',
             403 => 'Forbidden',
             404 => 'Not Found',
+            405 => 'Method Not Allowed',
             500 => 'Internal Server Error',
+            503 => 'Service Unvailable',
             default => 'Unknown Status'
         };
     }
@@ -62,7 +71,7 @@ class Response
         return $this->reasonPhrase;
     }
 
-    public function addHeader(string $key, string $value): self
+    public function setHeader(string $key, string $value): self
     {
         $this->headers[$key] = $value;
         return $this;
@@ -89,7 +98,7 @@ class Response
         return $this->body;
     }
 
-    public function addCookie(string $name, string $value): self
+    public function setCookie(string $name, string $value): self
     {
         $this->cookies[$name] = $value;
         return $this;
