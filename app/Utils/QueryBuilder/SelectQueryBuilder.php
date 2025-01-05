@@ -21,7 +21,7 @@ class SelectQueryBuilder extends QueryBuilder
 
     public function getType(): string
     {
-        return 'select';
+        return $this::TYPE_SELECT;
     }
 
     /**
@@ -219,7 +219,7 @@ class SelectQueryBuilder extends QueryBuilder
         return " {$limit['rows']} OFFSET {$limit['offset']}";
     }
 
-    public function buildQuery(): string
+    public function buildSQL(): string
     {
         $sql = "";
 

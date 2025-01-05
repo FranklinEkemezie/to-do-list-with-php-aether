@@ -16,7 +16,7 @@ class InsertQueryBuilder extends QueryBuilder
 
     public function getType(): string
     {
-        return 'insert';
+        return $this::TYPE_INSERT;
     }
 
     public function columns(string ...$columns): self
@@ -38,11 +38,11 @@ class InsertQueryBuilder extends QueryBuilder
             throw new QueryBuilderException('Query columns not set.');
 
         if (is_array($this->columns) && count($this->columns) !== count($values))
-            throw new QueryBuilderException('Values is not compatible with columns');
+            throw new QueryBuilderException('The number of values do not match with the provided columns');
 
         if (! isset($this->values)) $this->values = [];
-
         array_push($this->values, $values);
+        
         return $this;
     }
 
@@ -52,6 +52,11 @@ class InsertQueryBuilder extends QueryBuilder
         $values = array_values($columnValues);
 
         return $this->values(...$values)->columns(...$columns);
+    }
+
+    public function getValues(): array
+    {
+        return $this->values;
     }
 
     // Build methods
@@ -69,15 +74,15 @@ class InsertQueryBuilder extends QueryBuilder
             throw new QueryBuilderException('Query values not set.');
 
         return join(', ', array_map(
-            fn(array $valuesArr): string => "(" . join(', ', array_map(
-                fn(mixed $value): mixed => is_string($value) ? "'$value'" : $value,
-                $valuesArr
+            fn(array $values): string => "(" . join(', ', array_map(
+                fn(string $value, string $column): string => ":$column",
+                $values, $this->columns
             )) . ")",
             $this->values
         ));
     }
 
-    public function buildQuery(): string
+    public function buildSQL(): string
     {
         $table      = $this->getTable();
         $columns    = $this->buildColumns();

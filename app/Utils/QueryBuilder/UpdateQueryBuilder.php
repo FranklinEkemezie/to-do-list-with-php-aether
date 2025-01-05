@@ -15,7 +15,7 @@ class UpdateQueryBuilder extends QueryBuilder
 
     public function getType(): string
     {
-        return 'update';
+        return $this::TYPE_UPDATE;
     }
 
     public function update(array $values): self
@@ -35,19 +35,23 @@ class UpdateQueryBuilder extends QueryBuilder
             function(string $column) use ($updateValues): string {
                 $value = $updateValues[$column];
 
-                if (is_string($value)) $value = "'$value'";
+                if (is_string($value) && ! $this::isExpression($value))
+                    $value = "'$value'";
+
                 return "$column = $value";
             }, 
             array_keys($updateValues)
         ));
     }
 
-    public function buildQuery(): string
+    public function buildSQL(): string
     {
         // Basic SQL UPDATE syntax
         $table      = $this->getTable();
         $updates    = $this->buildUpdates();
-        $condition  = ! isset($this->whereCondition) ? 'false' : $this->buildWhereCondition();
+        $condition  = ! isset($this->whereCondition) ? 
+            'false' : $this->buildWhereCondition()
+        ;
 
         return "UPDATE $table SET $updates WHERE $condition;";
     }

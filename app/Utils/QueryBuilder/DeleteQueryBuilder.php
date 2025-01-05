@@ -11,14 +11,16 @@ class DeleteQueryBuilder extends QueryBuilder
 
     public function getType(): string
     {
-        return 'delete';
+        return $this::TYPE_DELETE;
     }
 
-    public function buildQuery(): string
+    public function buildSQL(): string
     {
         // Basic SQL DELETE syntax
         $table      = $this->getTable();
-        $condition  = ! isset($this->whereCondition) ? 'false' : $this->buildWhereCondition();
+        $condition  = ! isset($this->whereCondition) ? 
+            'false' : $this->buildWhereCondition()
+        ;
 
         return "DELETE FROM $table WHERE $condition;";
     }

@@ -8,8 +8,15 @@ use FranklinEkemezie\PHPAether\Exceptions\QueryBuilderException;
 
 abstract class QueryBuilder
 {
+
+    public const TYPE_SELECT = 'select';
+    public const TYPE_INSERT = 'insert';
+    public const TYPE_UPDATE = 'update';
+    public const TYPE_DELETE = 'delete';
+
     protected string $table;
     protected array $whereCondition;
+    protected array $params = [];
 
     public static function build(string $queryType): QueryBuilder
     {
@@ -54,6 +61,18 @@ abstract class QueryBuilder
         return $this->table;
     }
 
+    public function getParams(): array
+    {
+        return $this->params;
+    }
+
+    protected static function isExpression(mixed $expr): bool
+    {
+        return is_string($expr) && (
+            preg_match("/^\(.+\)$/", $expr) === 1
+        );
+    }
+
     // WHERE methods: SELECT, UPDATE, DELETE
 
     public function whereRaw(string $condition, bool $joinWithAnd=false): self
@@ -68,16 +87,24 @@ abstract class QueryBuilder
 
     public function whereColumnIs(string $column, mixed $value, bool $joinWithAnd=false): self
     {
-        if (is_string($value)) $value = "'$value'";
 
-        return $this->whereRaw("$column = $value", $joinWithAnd);
+        // Set parameters
+        $this->params[$column] = $value;
+
+        return $this->whereRaw("$column = :$column", $joinWithAnd);
     }
 
-    public function whereColumsAre(array $conditions, bool $joinWithAnd=false): self
+    public function whereColumnsAre(array $conditions, bool $joinWithAnd=false): self
     {
         return $this->whereRaw(
             join(' AND ', array_map(
-                fn($col): string => "$col = {$conditions[$col]}",
+                function(string $col) use ($conditions): string {
+
+                    // Set parameters
+                    $this->params[$col] = $conditions[$col];
+
+                    return "$col = :$col";
+                },
                 array_keys($conditions)
             )),
             $joinWithAnd
@@ -122,6 +149,13 @@ abstract class QueryBuilder
         );
     }
 
+    // params
+    public function setParams(array $params=[]): self
+    {
+        $this->params = array_merge($this->params, $params);
+        return $this;    
+    }
+
     // Build methods
 
     protected function buildCondition(array $condition): string
@@ -150,7 +184,27 @@ abstract class QueryBuilder
         return $this->buildCondition($this->whereCondition);
     }
 
-    abstract public function buildQuery(): string;
+    abstract public function buildSQL(): string;
+
+    public function buildQuery(bool $parameterised=false): string
+    {
+        $sql = $this->buildSQL();
+
+        // Replace :col parameters in SQL, 
+        // if parameterisation is not required
+        if (! $parameterised) {
+            foreach($this->params as $col => $value) {
+                if (is_string($value) && ! $this::isExpression($value))
+                    $value = "'$value'";
+
+                $sql = str_replace(
+                    ":$col", (string) $value, $sql
+                );
+            }
+        }
+
+        return $sql;
+    }
 
     public function __toString(): string
     {
