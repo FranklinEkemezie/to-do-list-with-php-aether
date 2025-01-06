@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace FranklinEkemezie\PHPAether\Core;
 
 use FranklinEkemezie\PHPAether\Controllers\ErrorController;
+use FranklinEkemezie\PHPAether\Exceptions\MethodNotAllowedException;
+use FranklinEkemezie\PHPAether\Exceptions\NotFoundException;
 use FranklinEkemezie\PHPAether\Utils\Dictionary;
 
 class App
@@ -22,12 +24,24 @@ class App
 
     public function run(Request $request): Response
     {
-        // Route the request
-        $handler = $this->router->route($request);
-
-        // Execute the handler
         try {
+            // Route the request
+            $handler = $this->router->route($request);
+
+            // Execute the handler
             $response = $handler($this->database);
+
+        } catch(NotFoundException $e) {
+            if ((int) $e->getCode() === 404) {
+                // Route Not Found
+                return ErrorController::notFound();
+            }
+
+            throw $e;
+        } catch(MethodNotAllowedException $e) {
+            return ErrorController::methodNotAllowed(
+                $e->getMessage(), $e->getAllowedMethods()
+            );
         } catch (\Exception $e) {
             $errorMsg = $this->isDev() && $this->isInDebugMode() ? 
                 $e->getMessage() . "\n" .  $e->getTraceAsString() : null
