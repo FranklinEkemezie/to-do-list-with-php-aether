@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FranklinEkemezie\PHPAether\Core;
 
-use FranklinEkemezie\PHPAether\Controllers\ErrorController;
+use FranklinEkemezie\PHPAether\Exceptions\MethodNotAllowedException;
 use FranklinEkemezie\PHPAether\Exceptions\NotFoundException;
 use FranklinEkemezie\PHPAether\Middlewares\AuthMiddleware;
 
@@ -170,7 +170,7 @@ class Router
 
     /**
      * Resolves the authentication
-     * @param \FranklinEkemezie\PHPAether\Core\Request $request The request to resolve the authentication
+     * @param Request $request The request to resolve the authentication
      * @param array|bool|null $routeAuthInfo The route authentication info
      * @return callable|null Returns `callable` (which returns a `Response`) if something goes wrong or 
      * `true` if authentication is resolved successfully
@@ -183,7 +183,7 @@ class Router
             $authIsRequired &&
 
             // Resolve authentication via middleware, if any:
-            // If a callable is returned somethin went wrong.
+            // If a callable is returned something went wrong.
             is_callable($authRes = (new AuthMiddleware)->handle($request))
         ) 
             return $authRes;
@@ -201,32 +201,40 @@ class Router
 
     public function getRoutesMap(): ?array
     {
-        
         $routesJson = file_get_contents($this->routeMapFile);
         $routeMap = json_decode($routesJson, true, flags: JSON_THROW_ON_ERROR);
 
         return $routeMap;
     }
 
+    /**
+     * Route the request to appropriate handler
+     * @param Request $request
+     * @throws NotFoundException when the requested route is not found
+     * @throws MethodNotAllowedException when the route is found, but request method is not allowed
+     * @return callable Returns a callback handler function. The callback function accepts a `Database` object
+     * as the first parameter
+     * 
+     */
     public function route(Request $request): callable
     {
         // Match the route, to check if it exists
         $routesMap = $this->getRoutesMap();
         $requestRoute = self::matchRequestPath($request->path, $routesMap);
+
         if ($requestRoute === null) {
 
             // Route not found
-            return [ErrorController::class, 'notFound'];
+            throw new NotFoundException("Route: {$request->path} not found", 404);
         }
 
         // Check if the method is allowed
         $allowedMethods = self::getAllowedMethods($requestRoute, $routesMap);
         if (! in_array($request->method, $allowedMethods)) {
 
-            // Internal Server Error
-            return fn() => call_user_func_array(
-                [ErrorController::class, 'methodNotAllowed'],
-                ['allowedMethods' => $allowedMethods]
+            // Method not allowed
+            throw new MethodNotAllowedException(
+                "{$request->method} method not allowed", $allowedMethods
             );
         }
 
