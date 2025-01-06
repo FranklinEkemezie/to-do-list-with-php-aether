@@ -109,14 +109,11 @@ class Database
      * Summary of executeSQLQuery
      * @param SelectQueryBuilder|InsertQueryBuilder|UpdateQueryBuilder|DeleteQueryBuilder $query
      * @param bool $fetchAll
-     * @throws \FranklinEkemezie\PHPAether\Exceptions\DatabaseException
-     * @throws \FranklinEkemezie\PHPAether\Exceptions\DuplicateEntryException
-     * @return \FranklinEkemezie\PHPAether\Utils\Collection|\FranklinEkemezie\PHPAether\Utils\Dictionary|null|true
+     * @throws DatabaseException
+     * @throws DuplicateEntryException
+     * @return Collection|Dictionary|string|null|true
      */
-    public function executeSQLQuery(
-        QueryBuilder $query,
-        bool $fetchAll=true
-    ): Collection|Dictionary|null|true
+    public function executeSQLQuery(QueryBuilder $query, bool $fetchAll=true): mixed
     {
 
         try {
@@ -151,11 +148,13 @@ class Database
                         // so, we don't commit changes pre-maturely
                         $startedNewTransaction = true;
                     }
-                        $this->beginTransaction();
                     try {
                         foreach($query->getParams() as $params) {
                             $stmt->execute($params);
                         }
+
+                        // Get the auto-incremented ID of the last item inserted
+                        $insertId = $this->lastInsertId();
                     } catch (PDOException $e) {
                         $this->rollBack();
                         throw $e;
@@ -164,8 +163,8 @@ class Database
                     if ($startedNewTransaction) {
                         $this->commit();
                     }
-                    
-                    return true; 
+
+                    return $insertId; 
                            
                 // For UPDATE and DELETE statements
                 case QueryBuilder::TYPE_UPDATE:
