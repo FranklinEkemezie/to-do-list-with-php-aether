@@ -21,7 +21,8 @@ use FranklinEkemezie\PHPAether\Utils\QueryBuilder\{
     DeleteQueryBuilder
 };
 
-use \PDO;
+use PDO;
+use PDOException;
 
 /**
  * Database class
@@ -92,7 +93,7 @@ class Database
 
             static::$dbConn = $dbConn;
 
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             throw new DatabaseException("Database connection failed: {$e->getMessage()}");
         }
         
@@ -137,9 +138,33 @@ class Database
                 
                 // For INSERT statements
                 case QueryBuilder::TYPE_INSERT:
-                    foreach($query->getParams() as $params) {
-                        $stmt->execute($params);
+                    /** 
+                     * @var bool $startedNewTransaction 
+                     * Whether the transaction was initiated here
+                     */
+                    $startedNewTransaction = false;
+
+                    if (! $this->inTransaction()) {
+                        $this->beginTransaction();
+
+                        // this way, we know we started the transaction here,
+                        // so, we don't commit changes pre-maturely
+                        $startedNewTransaction = true;
                     }
+                        $this->beginTransaction();
+                    try {
+                        foreach($query->getParams() as $params) {
+                            $stmt->execute($params);
+                        }
+                    } catch (PDOException $e) {
+                        $this->rollBack();
+                        throw $e;
+                    }
+
+                    if ($startedNewTransaction) {
+                        $this->commit();
+                    }
+                    
                     return true; 
                            
                 // For UPDATE and DELETE statements
@@ -152,17 +177,18 @@ class Database
                     throw new DatabaseException("Invalid/Unsupported SQL query: {$query->getType()}");
             }
                 
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             // Check for duplicate error (for MySQL)
             if ($exceptionInfo = static::isDuplicateEntryException($e)) {
                 throw new DuplicateEntryException(
                     "Database Exception: Duplicate entry '{$exceptionInfo['value']}' for key '{$exceptionInfo['key']}'",
-                    (int) $exceptionInfo['code']
+                    (int) $exceptionInfo['code'],
+                    $e
                 );
             }
 
             throw new DatabaseException(
-                "Database Exception: {$e->getMessage()}", (int) $e->getCode()
+        "Database Exception: {$e->getMessage()}", (int) $e->getCode(), $e
             );
         } 
     }
@@ -170,10 +196,10 @@ class Database
     /**
      * Check if the exception thrown during a database operation is caused by
      * MySQL duplicate entry constrainst
-     * @param \PDOException $e The exception
+     * @param PDOException $e The exception
      * 
      */
-    protected static function isDuplicateEntryException(\PDOException $e): array|false
+    protected static function isDuplicateEntryException(PDOException $e): array|false
     {
         $message = $e->getMessage();
         $pattern = "/^SQLSTATE\[(\d+)\]: Integrity constraint violation: (\d+) Duplicate entry '(.*)' for key '(.*)'$/";
