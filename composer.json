@@ -5,7 +5,8 @@
     "license": "MIT License",
     "autoload": {
         "psr-4": {
-            "FranklinEkemezie\\PHPAether\\": "app/"
+            "PHPAether\\": "app/",
+            "PHPAether\\Tests\\": "tests/"
         }
     },
     "authors": [
