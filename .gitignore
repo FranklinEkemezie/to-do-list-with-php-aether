@@ -2,3 +2,5 @@
 .env
 .todo
 /scratchpad/
+.idea/
+.idea/phpunit.xml
