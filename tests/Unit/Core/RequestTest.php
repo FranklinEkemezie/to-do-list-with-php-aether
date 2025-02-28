@@ -3,11 +3,11 @@
 namespace PHPAether\Tests\Unit\Core;
 
 use PHPAether\Core\Request;
+use PHPAether\Tests\MockHTTPRequestTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-class RequestTest extends TestCase
+class RequestTest extends MockHTTPRequestTestCase
 {
 
     public static function requestTestCases(): array
