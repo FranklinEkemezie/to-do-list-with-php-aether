@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PHPAether\Core;
 
-
 use Exception;
 
 class Request
