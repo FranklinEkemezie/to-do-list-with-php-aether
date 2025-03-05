@@ -51,7 +51,9 @@ class ArrayListTest extends TestCase
             // [$offset, $length, $expected]
             [1, 2, [2, 3]],
             ['expected' => [1, 2, 3, 4]],
-            [-1, 'expected' => [4, 3, 2, 1]]
+            [-1, 'expected' => [4, 3, 2, 1]],
+            [2, 8, [3, 4]],
+            [-2, 8, [3, 2, 1]]
         ];
     }
 
@@ -64,10 +66,6 @@ class ArrayListTest extends TestCase
     )
     {
         $actual = $this->list->copy($offset, $length)->toArray();
-
-        print_r($expected);
-        print_r($actual);
-
         $this->assertEquals($expected, $actual);
     }
 
@@ -137,11 +135,9 @@ class ArrayListTest extends TestCase
         );
 
         // insert
-        $actual = $this->list->insert(5, 8)->toArray();
-        print_r($actual);
         $this->assertEquals(
             [7, -3, 0, 2, 3, 8, 4, 6, 0],
-            $actual
+            $this->list->insert(5, 8)->toArray()
         );
     }
 

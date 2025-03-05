@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PHPAether\Utils\Collections;
 
+use InvalidArgumentException;
+use OutOfRangeException;
+
 class ArrayList
 {
 
@@ -45,29 +48,34 @@ class ArrayList
         ));
     }
 
+
     /**
      * Get a copy of the list
-     * @param int $offset
-     * @param int|null $length
+     * @param int $start The index to start the copy from. If not specified
+     * the copy starts from the first item. If `$start` is negative, the copy is
+     * done in a reverse manner.
+     * @param int|null $length The length of the new list copy. If not specified
+     * or there are no more items to copy from the start, the copy continues to
+     * the last item.
      * @return $this
      */
     public function copy(int $start=0, ?int $length=null): ArrayList
     {
-        if ($length < 0) {
-            throw new \InvalidArgumentException('Parameter $length must be a positive integer');
+        if (is_int($length) && $length < 0) {
+            throw new InvalidArgumentException('Parameter $length must be a positive integer');
         }
 
-        $inReverseMode = $start < 0; // false
-        $listSize = $this->size(); // 4
-        $length ??= $listSize; // 2
-        $startIndex = $this->normaliseIndex($start); // 1
+        $inReverseMode = $start < 0;
+        $listSize = $this->size();
+        $length ??= $listSize;
+        $startIndex = $this->normaliseIndex($start);
 
         $getNextIndex = function ($currIndex) use (
             $startIndex, $listSize, $inReverseMode, $length
         ): int|false {
             if (! $inReverseMode) {
-                $endIndex = $startIndex + ($length - 1); // 2
-                $endIndex = min($endIndex, $listSize - 1); // cap value at maximum index // 2
+                $endIndex = $startIndex + ($length - 1);
+                $endIndex = min($endIndex, $listSize - 1); // cap value at maximum index
                 $shouldContinue = $currIndex < $endIndex;
             } else {
                 $endIndex = $startIndex - ($length - 1);
@@ -83,9 +91,6 @@ class ArrayList
         $resultList = [];
         $currIndex = $startIndex;
         while ($currIndex !== false) {
-
-            print_r("Curr: $currIndex\n");
-
             $resultList[] = $this->list[$currIndex];
             $currIndex = $getNextIndex($currIndex);
         }
@@ -93,6 +98,10 @@ class ArrayList
         return new static($resultList);
     }
 
+    /**
+     * Reverse the items in the list
+     * @return $this
+     */
     public function reverse(): ArrayList
     {
         return $this->copy(-1);
@@ -116,20 +125,24 @@ class ArrayList
 
     /**
      * Get the list as a PHP indexed array
-     * @return array|array[]|iterable[]
+     * @return array|array[]|iterable[] the list as an array
      */
     public function toArray(): array
     {
         return $this->list;
     }
 
+
     /**
-     * Get the JSON representation of the list
-     * @return string
+     * @param int $flags Optional flags specified as bitmaps by one or
+     * more of the `JSON_*` constants which determines how the value
+     * is encoded
+     * @param int $depth Set the maximum depth. Must be greater than zero.
+     * @return string|false a JSON encoded string on success or FALSE on failure.
      */
-    public function toJSON(): string
+    public function toJSON(int $flags=0, int $depth=512): string|false
     {
-        return json_encode($this->toArray());
+        return json_encode($this->toArray(), $flags, $depth);
     }
 
     /**
@@ -250,7 +263,7 @@ class ArrayList
     public function set(int $index, mixed $value): static
     {
         if (! $this->has($index)) {
-            throw new \OutOfRangeException("List does not have the index: $index");
+            throw new OutOfRangeException("List does not have the index: $index");
         }
 
         $this->list[$index] = $value;
@@ -306,18 +319,20 @@ class ArrayList
         return $this->size() === 0;
     }
 
-    public function remove(int $index)
+    /**
+     * Remove an item from the list
+     * @param int $index The index of the item to remove from the list
+     * @return mixed The item removed from the list
+     */
+    public function remove(int $index): mixed
     {
         if (! $this->indexInRange($index)) {
-            throw new \OutOfRangeException("Index $index is out of range");
+            throw new OutOfRangeException("Index $index is out of range");
         }
 
-        $value = $this->get($index);
+        $removedItems = array_splice($this->list, $index, 1);
 
-        unset($this->list[$this->normaliseIndex($index)]);
-        $this->list = array_values($this->list);
-
-        return $value;
+        return $removedItems[0];
     }
 
     /**
@@ -337,13 +352,40 @@ class ArrayList
         return ($index >= $minIndex) && ($index <= $maxIndex);
     }
 
-    private function normaliseIndex(int $index, bool $capAtMaxIndex=false): int
+    /**
+     * Normalises the index
+     * @param int $index
+     * @return int The normalised index
+     */
+    private function normaliseIndex(int $index): int
     {
-        $maxIndex = $this->size() - 1;
-        $normIndex = $index < 0 ? $this->size() + $index : $index;
-        if ($capAtMaxIndex) $normIndex = min($normIndex, $maxIndex);
+        return $index < 0 ? ($this->size() + $index) : $index;
+    }
 
-        return $normIndex;
+    /**
+     * Get the offset and length from the start and end
+     * values (for slice and splice operations)
+     * @param int|null $start The start index
+     * @param int|null $end The end index
+     * @return array An array containing the offset and length values
+     */
+    private function getOffsetAndLengthFromStartAndEnd(?int $start=null, ?int $end=null): array
+    {
+        if (is_int($start) && ! $this->indexInRange($start)) {
+            throw new OutOfRangeException('$start is out of range');
+        }
+
+        if (is_int($end) && ! $this->indexInRange($end)) {
+            throw new OutOfRangeException('$end is out of range');
+        }
+
+        $start  = $this->normaliseIndex($start ?? 0);
+        $end    = $this->normaliseIndex($end ?? $this->size());
+
+        $offset = $start;
+        $length = $end - $start;
+
+        return [$offset, $length];
     }
 
     /**
@@ -355,19 +397,8 @@ class ArrayList
     public function slice(?int $start=null, ?int $end=null): static
     {
 
-        if (is_int($start) && ! $this->indexInRange($start)) {
-            throw new \OutOfRangeException('$start is out of range');
-        }
-
-        if (is_int($end) && ! $this->indexInRange($end)) {
-            throw new \OutOfRangeException('$end is out of range');
-        }
-
-        $start  = $this->normaliseIndex($start ?? 0);
-        $end    = $this->normaliseIndex($end ?? $this->size());
-        $length = $end - $start;
-
-        return new static(array_slice($this->list, $start, $length));
+        [$offset, $length] = $this->getOffsetAndLengthFromStartAndEnd($start, $end);
+        return new static(array_slice($this->list, $offset, $length));
     }
 
     /**
@@ -379,19 +410,8 @@ class ArrayList
      */
     public function splice(?int $start=null, ?int $end=null, array $replacement=[]): static
     {
-        if (is_int($start) && ! $this->indexInRange($start)) {
-            throw new \OutOfRangeException('$start is out of range');
-        }
-
-        if (is_int($end) && ! $this->indexInRange($end)) {
-            throw new \OutOfRangeException('$end is out of range');
-        }
-
-        $start  = $this->normaliseIndex($start ?? 0);
-        $end    = $this->normaliseIndex($end ?? $this->size());
-        $length = $end - $start;
-
-        return new static(array_splice($this->list, $start, $length, $replacement));
+        [$offset, $length] = $this->getOffsetAndLengthFromStartAndEnd($start, $end);
+        return new static(array_splice($this->list, $offset, $length, $replacement));
     }
 
 }
