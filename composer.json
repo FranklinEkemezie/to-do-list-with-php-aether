@@ -2,7 +2,7 @@
     "name": "franklin-ekemezie/php-aether",
     "description": "PHP Aether - A lightweight, extensible framework bridging simplicity and power for modern web development",
     "type": "library",
-    "license": "MIT License",
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "PHPAether\\": "app/",
@@ -22,8 +22,9 @@
     },
     "require": {
         "firebase/php-jwt": "^6.10",
-        "vlucas/phpdotenv": "^5.6",
-      "ext-http": "*"
+        "vlucas/phpdotenv": "^5.6"
     },
-    "test": "vendor/bin/phpunit"
+    "scripts": {
+        "test": "phpunit"
+    }
 }
