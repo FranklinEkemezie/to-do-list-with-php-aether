@@ -10,9 +10,7 @@ class Router
     protected array $routes = [];
 
 
-    public function registerRoutes(
-        array $routes
-    ): self
+    public function registerRoutes(array $routes): self
     {
         $this->routes = array_merge(
             $this->routes,
@@ -22,7 +20,7 @@ class Router
         return $this;
     }
 
-    public function getRegisterRoutes(): array
+    public function getRegisteredRoutes(): array
     {
         return $this->routes;
     }
@@ -31,10 +29,13 @@ class Router
         Request $request
     ): array
     {
-        $requestRouteInfo = $this->parseRouteInfo(
-            $this->routes[$request->routePath],
-            $request->method
-        );
+
+        // Check if route info is found
+        if (! ($requestRouteInfo = $this->routes[$request->route] ?? null)) {
+            return ['Error', 'notFound'];
+        }
+
+        $requestRouteInfo = $this->parseRouteInfo($requestRouteInfo, $request->method);
 
         // Get the controller
         $controller = $requestRouteInfo['controller'];
@@ -43,23 +44,29 @@ class Router
         return [$controller, $action];
     }
 
-    private function parseRouteInfo(array $routeInfo, string $requestMethod): array
+    private function parseRouteInfo(array $routeInfo, string $requestMethod): ?array
     {
 
-        $getParams = function (string $param) use ($routeInfo, $requestMethod) {
-            $value = $routeInfo[$requestMethod][$param] ?? null;
-            $value ??= $routeInfo[$param] ?? null;
-
-            return $value;
+        $getRouteParams = function (string $param) use ($routeInfo, $requestMethod) {
+            return $routeInfo[$requestMethod][$param] ?? ($routeInfo[$param] ?? null);
         };
 
-        $controller = $getParams('controller');
-        $action     = $getParams('action');
+        $buildRouteInfo = function (string $controller, string $action): array
+        {
+            return [
+                'action'    => $action,
+                'controller'=> $controller
+            ];
+        };
 
-        return [
-            'controller'    => $controller,
-            'action'        => $action
-        ];
+        $controller = $getRouteParams('controller');
+        $action     = $getRouteParams('action');
+
+        if (! $controller || ! $action) {
+            return null;
+        }
+
+        return $buildRouteInfo($controller, $action);
     }
 
 

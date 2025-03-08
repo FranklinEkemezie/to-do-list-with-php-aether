@@ -10,30 +10,23 @@ use PHPUnit\Framework\Attributes\Test;
 class RequestTest extends MockHTTPRequestTestCase
 {
 
-    public static function requestTestCases(): array
-    {
-        return [
-            ['/', 'GET', '/'],
-            ['/login?r_url=/user/dashboard', 'POST', '/login'],
-            ['/auth/otp/verify', 'GET', '/auth/otp/verify'],
-            ['/user/profile', 'PUT', '/user/profile']
-        ];
-    }
 
+    /**
+     * @throws \Exception
+     */
     #[Test]
-    #[DataProvider('requestTestCases')]
-    public function it_gets_route_path(
-        string $requestUri,
-        string $requestMethod,
-        string $expectedRoutePath
+    #[DataProvider('httpRequestDataProvider')]
+    public function it_gets_route_and_method(
+        string $route, string $method, array $expected
     )
     {
-        $_SERVER['REQUEST_METHOD'] = $requestMethod;
-        $_SERVER['REQUEST_URI'] = $requestUri;
+        // Set up HTTP request test case
+        static::setUpHTTPRequestTest($route, $method);
 
-        $request = new Request();
+        ['route' => $expectedRoute] = $expected;
 
-        $this->assertSame($expectedRoutePath, $request->routePath);
+        $request = new Request($_SERVER);
+        $this->assertSame($expectedRoute, $request->route);
     }
 
 }

@@ -6,7 +6,9 @@
     "autoload": {
         "psr-4": {
             "PHPAether\\": "app/",
-            "PHPAether\\Tests\\": "tests/"
+            "PHPAether\\Tests\\": "tests/",
+            "App\\": "app/",
+            "App\\Tests": "tests/"
         }
     },
     "authors": [
@@ -20,6 +22,7 @@
     },
     "require": {
         "firebase/php-jwt": "^6.10",
-        "vlucas/phpdotenv": "^5.6"
+        "vlucas/phpdotenv": "^5.6",
+      "ext-http": "*"
     }
 }

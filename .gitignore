@@ -2,3 +2,5 @@
 .env
 .todo
 /scratchpad/
+.idea/
+.phpunit.result.cache
