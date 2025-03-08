@@ -6,6 +6,7 @@ namespace PHPAether\Tests\Unit\Core;
 
 use PHPAether\Core\Request;
 use PHPAether\Core\Router;
+use PHPAether\Exceptions\FileNotFoundException;
 use PHPAether\Tests\MockHTTPRequestTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -38,15 +39,26 @@ class RouterTest extends MockHTTPRequestTestCase
     }
 
     /**
+     * @throws FileNotFoundException
+     */
+    #[Test]
+    public function it_registers_routes_from_route_file(): void
+    {
+        $router = new Router();
+
+        $routeFilename = TESTS_DIR . "/config/routes.json";
+        $router->registerRoutesFromRouteFile($routeFilename);
+
+        $routes = json_decode(file_get_contents($routeFilename), true);
+        $this->assertEquals($routes, $router->getRegisteredRoutes());
+    }
+
+    /**
      * @throws Exception
      */
     #[Test]
     #[DataProvider('httpRequestDataProvider')]
-    public function it_routes_request(
-        string $method,
-        string $route,
-        array $expected
-    )
+    public function it_routes_request(string $method, string $route, array $expected)
     {
         // Set up HTTP request test case
         static::setUpHTTPRequestTest($route, $method);
