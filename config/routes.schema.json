@@ -1,0 +1,87 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "format": "url"
+        }
+    },
+    "patternProperties": {
+        "^/.*$": {
+            "type": "object",
+            "properties": {
+                "controller": {
+                    "type": "string",
+                    "description": "The default controller for this route."
+                },
+                "action": {
+                    "type": "string",
+                    "description": "The default action (method) of the controller for this route"
+                },
+                "methods": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+                        "description": "List of allowed HTTP methods. Defaults to ['GET'] if not provided"
+                    }
+                },
+                "GET": {
+                    "type": "object",
+                    "properties": {
+                        "controller": {
+                            "type": "string"
+                        },
+                        "action": {
+                            "type": "string"
+                        },
+                        "additionalProperties": false,
+                        "description": "Overrides for GET requests"
+                    }
+                },
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "controller": {
+                            "type": "string"
+                        },
+                        "action": {
+                            "type": "string"
+                        },
+                        "additionalProperties": false,
+                        "description": "Overrides for POST requests"
+                    }
+                },
+                    "PUT": {
+                    "type": "object",
+                    "properties": {
+                        "controller": {
+                            "type": "string"
+                        },
+                        "action": {
+                            "type": "string"
+                        },
+                        "additionalProperties": false,
+                        "description": "Overrides for PUT requests"
+                    }
+                },
+                "DELETE": {
+                    "type": "object",
+                    "properties": {
+                        "controller": {
+                            "type": "string"
+                        },
+                        "action": {
+                            "type": "string"
+                        },
+                        "additionalProperties": false,
+                        "description": "Overrides for DELETE requests"
+                    }
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "description": "Schema for defining application routes."
+}
