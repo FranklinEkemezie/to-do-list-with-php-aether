@@ -7,6 +7,7 @@ namespace PHPAether\Tests\Unit\Core;
 use PHPAether\Core\Request;
 use PHPAether\Core\Router;
 use PHPAether\Tests\MockHTTPRequestTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Exception;
 
@@ -20,18 +21,18 @@ class RouterTest extends MockHTTPRequestTestCase
         parent::setUp();
 
         $this->router = new Router();
-        $this->router->registerRoutes($this->routes);
+        $this->router->registerRoutes(static::TEST_ROUTES);
     }
 
     #[Test]
     public function it_registers_routes_from_routes(): void
     {
         $router = new Router();
-        $router->registerRoutes($this->routes);
+        $router->registerRoutes(static::TEST_ROUTES);
 
         $this->assertSame(
-            $this->routes,
-            $router->getRegisterRoutes()
+            static::TEST_ROUTES,
+            $router->getRegisteredRoutes()
         );
 
     }
@@ -40,14 +41,25 @@ class RouterTest extends MockHTTPRequestTestCase
      * @throws Exception
      */
     #[Test]
-    public function it_routes_request()
+    #[DataProvider('httpRequestDataProvider')]
+    public function it_routes_request(
+        string $method,
+        string $route,
+        array $expected
+    )
     {
+        // Set up HTTP request test case
+        static::setUpHTTPRequestTest($route, $method);
 
-        $requestMock = $this->getMockBuilder(Request::class)->getMock();
+        ['action' => $expectedAction] = $expected;
+
+        $requestMock = $this->getMockBuilder(Request::class)
+            ->setConstructorArgs([$_SERVER])
+            ->onlyMethods([])
+            ->getMock()
+        ;
 
         [$controllerName, $action] = $this->router->route($requestMock);
-
-        $expected = ['Home', 'index'];
-        $this->assertSame($expected, [$controllerName, $action]);
+        $this->assertSame($expectedAction, [$controllerName, $action]);
     }
 }
