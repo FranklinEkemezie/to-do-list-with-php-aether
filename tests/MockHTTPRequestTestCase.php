@@ -11,7 +11,7 @@ class MockHTTPRequestTestCase extends TestCase
         '/' => [
             'controller'    => 'Home',
             'action'        => 'index',
-            'methods'       => ['GET']
+            'methods'       => ['GET', 'POST']
         ],
         '/login' => [
             'controller'    => 'Auth',
@@ -42,6 +42,12 @@ class MockHTTPRequestTestCase extends TestCase
         ]
     ];
 
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+
+        require_once __DIR__ . "/../config/constants.php";
+    }
 
     public static function setUpHTTPRequestTest(
         string $route, string $method
@@ -57,7 +63,7 @@ class MockHTTPRequestTestCase extends TestCase
         $dataProviders = [
             'GET'   => [self::class, 'httpGETRequestDataProvider'],
             'POST'  => [self::class, 'httpPOSTRequestDataProvider'],
-            'PUT'   => [self::class, 'httPUTRequestDataProvider'],
+            'PUT'   => [self::class, 'httpPUTRequestDataProvider'],
         ];
 
         foreach ($dataProviders as $requestMethod => $dataProvider) {
@@ -114,7 +120,7 @@ class MockHTTPRequestTestCase extends TestCase
         ];
     }
 
-    public static function httPUTRequestDataProvider(): array
+    public static function httpPUTRequestDataProvider(): array
     {
         return [
             // [$route, $_route, $_action, $_response] (_ means "expected")

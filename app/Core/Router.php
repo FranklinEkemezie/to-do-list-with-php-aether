@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PHPAether\Core;
 
+use PHPAether\Exceptions\FileNotFoundException;
+
 class Router
 {
 
@@ -12,12 +14,22 @@ class Router
 
     public function registerRoutes(array $routes): self
     {
-        $this->routes = array_merge(
-            $this->routes,
-            $routes
-        );
-
+        $this->routes = array_merge($this->routes, $routes);
         return $this;
+    }
+
+    /**
+     * @throws FileNotFoundException
+     */
+    public function registerRoutesFromRouteFile(?string $routeFilename=null): self
+    {
+        $routeFilename ??= BASE_DIR . "/config/routes.json";
+        if (! file_exists($routeFilename)) {
+            throw new FileNotFoundException("Route file $routeFilename not found");
+        }
+
+        $routes = json_decode(file_get_contents($routeFilename), true);
+        return $this->registerRoutes($routes);
     }
 
     public function getRegisteredRoutes(): array
@@ -25,9 +37,7 @@ class Router
         return $this->routes;
     }
 
-    public function route(
-        Request $request
-    ): array
+    public function route(Request $request): array
     {
 
         // Check if route info is found

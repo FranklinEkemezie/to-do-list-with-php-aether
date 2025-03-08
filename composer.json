@@ -1,6 +1,6 @@
 {
     "name": "franklin-ekemezie/php-aether",
-    "description": "PHP Aether - A lightweight, extensible framework brigding simplicity and power for modern web development",
+    "description": "PHP Aether - A lightweight, extensible framework bridging simplicity and power for modern web development",
     "type": "library",
     "license": "MIT License",
     "autoload": {
@@ -8,7 +8,7 @@
             "PHPAether\\": "app/",
             "PHPAether\\Tests\\": "tests/",
             "App\\": "app/",
-            "App\\Tests": "tests/"
+            "App\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -24,5 +24,6 @@
         "firebase/php-jwt": "^6.10",
         "vlucas/phpdotenv": "^5.6",
       "ext-http": "*"
-    }
+    },
+    "test": "vendor/bin/phpunit"
 }
