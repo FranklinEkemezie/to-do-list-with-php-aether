@@ -1,4 +1,5 @@
 {
+    "$schema": "../../config/routes.schema.json",
     "/book/:id": {
         "controller": "Book",
         "action": "viewBook"
