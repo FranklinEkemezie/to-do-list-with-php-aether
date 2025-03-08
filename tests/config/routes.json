@@ -1,0 +1,10 @@
+{
+    "/book/:id": {
+        "controller": "Book",
+        "action": "viewBook"
+    },
+    "/logout": {
+        "controller": "Auth",
+        "action": "logout"
+    }
+}
