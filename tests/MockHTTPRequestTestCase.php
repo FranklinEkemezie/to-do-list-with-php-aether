@@ -39,6 +39,16 @@ class MockHTTPRequestTestCase extends TestCase
         '/user/dashboard' => [
             'controller'    => 'User',
             'action'        => 'userDashboardView'
+        ],
+        'book/:id/edit' => [
+            'controller'    => 'Book',
+            'action'        => 'editBook',
+            'methods'       => ['POST', 'PUT'],
+            'parameters'    => [
+                'id'    => [
+                    'type'  => 'number',
+                ]
+            ]
         ]
     ];
 
@@ -107,9 +117,11 @@ class MockHTTPRequestTestCase extends TestCase
             ['/', '/', ['Home', 'index'], ''],
             ['/login?r_url=/user/dashboard', '/login', ['Auth', 'loginView'], ''],
             ['/user/dashboard', '/user/dashboard', ['User', 'userDashboardView'], ''],
-            ['/leaderboard?league=ruby', '/leaderboard', ['Error', 'notFound'], '']
+            ['/leaderboard?league=ruby', '/leaderboard', ['Error', 'notFound'], ''],
+            ['/book/3/edit', '/book/3/edit', ['Book', 'editBook'], '']
         ];
     }
+
     public static function httpPOSTRequestDataProvider(): array
     {
         return [
