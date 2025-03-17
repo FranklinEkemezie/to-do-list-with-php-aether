@@ -40,12 +40,14 @@ class Router
     public function route(Request $request): array
     {
 
-        // Check if route info is found
-        if (! ($requestRouteInfo = $this->routes[$request->route] ?? null)) {
+        $matchedRoute = $this->matchRequestRoute($request->route);
+        if ($matchedRoute === null) {
             return ['Error', 'notFound'];
         }
 
-        $requestRouteInfo = $this->parseRouteInfo($requestRouteInfo, $request->method);
+        $requestRouteInfo = $this->parseRouteInfo(
+            $this->routes[$matchedRoute], $request->method
+        );
 
         // Get the controller
         $controller = $requestRouteInfo['controller'];
@@ -54,7 +56,73 @@ class Router
         return [$controller, $action];
     }
 
-    private function parseRouteInfo(array $routeInfo, string $requestMethod): ?array
+    private function matchRequestRoute(string $requestRoute): ?string
+    {
+
+        foreach ($this->routes as $route => $routeInfo) {
+            if ($route === $requestRoute) {
+                return $route;
+            }
+
+            if ($this->routeIsRoutePattern($route)) {
+
+                $routeParams = $this->getRoutePatternParameters($route);
+                $routePatternRegex = $this->buildRoutePatternRegex($route, $routeParams);
+
+                if (preg_match($routePatternRegex, $requestRoute)) {
+                    return $route;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function buildRoutePatternRegex(
+        string $routePattern,
+        array $routeParams
+    )
+    {
+        $regexStr = implode("/", array_map(function (string $chunk) use ($routeParams) {
+            if (
+                $chunk[0] === ':' &&
+                ($param = substr($chunk, 1)) &&
+                ($paramInfo = $routeParams[$param] ?? null) 
+            ) {
+                $paramType = $paramInfo['type'] ?? "string";
+                return match($paramType) {
+                    "string"    => "\w+",
+                    "number"    => "\d+",
+                    default     => "\w+"
+                };
+                
+            }
+
+            return $chunk;
+        }, explode("/", $routePattern)));
+
+        return "@$regexStr@";
+    }
+
+    private function getRoutePatternParameters(
+        string $route
+    )
+    {
+        return $this->routes[$route]['parameters'] ?? [];
+    }
+
+    private function routeIsRoutePattern(
+        string $route
+    )
+    {
+
+        return ! is_null($this->routes[$route]['parameters'] ?? null);
+    }
+
+
+    private function parseRouteInfo(
+        array $routeInfo, 
+        string $requestMethod): ?array
     {
 
         $getRouteParams = function (string $param) use ($routeInfo, $requestMethod) {
