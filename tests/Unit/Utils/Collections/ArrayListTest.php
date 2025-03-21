@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Utils\Collections;
+namespace PHPAether\Tests\Unit\Utils\Collections;
 
 use PHPAether\Utils\Collections\ArrayList;
 use PHPUnit\Framework\Attributes\DataProvider;
