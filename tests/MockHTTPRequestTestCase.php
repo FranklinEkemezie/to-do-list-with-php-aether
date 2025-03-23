@@ -2,9 +2,9 @@
 
 namespace PHPAether\Tests;
 
-use PHPUnit\Framework\TestCase;
+use PHPAether\Tests\BaseTestCase;
 
-class MockHTTPRequestTestCase extends TestCase
+class MockHTTPRequestTestCase extends BaseTestCase
 {
 
     protected const TEST_ROUTES = [
@@ -51,13 +51,6 @@ class MockHTTPRequestTestCase extends TestCase
             ]
         ]
     ];
-
-    public static function setUpBeforeClass(): void
-    {
-        parent::setUpBeforeClass();
-
-        require_once __DIR__ . "/../config/constants.php";
-    }
 
     public static function setUpHTTPRequestTest(
         string $route, string $method
