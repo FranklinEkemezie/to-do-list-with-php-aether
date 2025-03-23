@@ -64,6 +64,7 @@ class FormValidator
         [$field, $alias] = $this->field;
         $this->validators[$field] ??= [];
         $this->validators[$field][] = [$validatorFn, $errorMsg, $alias]; 
+
         return $this;
     }
 
@@ -95,7 +96,9 @@ class FormValidator
     ): self
     {
         return $this->validateFor(
-            fn (string $value): bool => false, //
+            fn (string $value): bool => (
+                is_numeric($value)
+            ),
             $errorMsg
         );
     }
