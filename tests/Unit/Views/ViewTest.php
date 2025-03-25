@@ -22,7 +22,7 @@ class ViewTest extends BaseTestCase
 
         $view = new View('dashboard', TESTS_DIR . "/views/");
 
-        $expected = "Welcome, John (john@doe.com)!\n";
+        $expected = "Welcome, John (john@doe.com)!";
         $this->assertSame(
             $expected,
             $view->render($props)
