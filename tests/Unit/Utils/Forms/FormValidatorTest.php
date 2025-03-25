@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace PHPAether\Tests\Unit\Utils\Forms;
 
 use PHPAether\Exceptions\FormValidatorException;
+use PHPAether\Tests\BaseTestCase;
 use PHPAether\Utils\Forms\FormValidator;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
-class FormValidatorTest extends TestCase
+class FormValidatorTest extends BaseTestCase
 {
     protected FormValidator $formValidator;
     protected array $FORM = [
