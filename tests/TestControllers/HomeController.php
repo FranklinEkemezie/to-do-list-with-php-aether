@@ -4,7 +4,7 @@ namespace PHPAether\Tests\TestControllers;
 
 use PHPAether\Attributes\Route;
 use PHPAether\Controllers\Controller;
-use PHPAether\Core\Response;
+use PHPAether\Core\HTTP\Response;
 use PHPAether\Enums\RequestMethod;
 
 class HomeController extends Controller
