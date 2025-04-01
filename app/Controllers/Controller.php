@@ -2,7 +2,7 @@
 
 namespace PHPAether\Controllers;
 
-use PHPAether\Core\Request;
+use PHPAether\Core\HTTP\Request;
 
 abstract class Controller
 {
