@@ -1,6 +1,6 @@
 <?php
 
-namespace PHPAether\Core;
+namespace PHPAether\Core\HTTP;
 
 use PHPAether\Enums\ResponseStatus;
 

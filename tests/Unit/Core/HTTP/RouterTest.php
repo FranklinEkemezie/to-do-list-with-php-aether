@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace PHPAether\Tests\Unit\Core;
+namespace Core\HTTP;
 
-use PHPAether\Core\Request;
-use PHPAether\Core\Router;
+use PHPAether\Core\HTTP\Request;
+use PHPAether\Core\HTTP\Router;
 use PHPAether\Exceptions\FileNotFoundException;
 use PHPAether\Tests\MockHTTPRequestTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;

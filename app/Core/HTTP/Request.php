@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PHPAether\Core;
+namespace PHPAether\Core\HTTP;
 
 use Exception;
 

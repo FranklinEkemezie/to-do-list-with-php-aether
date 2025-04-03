@@ -1,8 +1,8 @@
 <?php
 
-namespace PHPAether\Tests\Unit\Core;
+namespace Core\HTTP;
 
-use PHPAether\Core\Request;
+use PHPAether\Core\HTTP\Request;
 use PHPAether\Tests\MockHTTPRequestTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PHPAether\Core;
+namespace PHPAether\Core\HTTP;
 
 use PHPAether\Exceptions\FileNotFoundException;
 
@@ -23,7 +23,7 @@ class Router
      */
     public function registerRoutesFromRouteFile(?string $routeFilename=null): self
     {
-        $routeFilename ??= BASE_DIR . "/config/routes.json";
+        $routeFilename ??= ROOT_DIR . "/config/routes.json";
         if (! file_exists($routeFilename)) {
             throw new FileNotFoundException("Route file $routeFilename not found");
         }

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use PDO;
-
 namespace PHPAether\Core\Database;
+
+use \PDO;
 
 class Database
 {
 
-    protected ?PDO $conn = null;
+    protected static ?PDO $conn = null;
 
     private function __construct()
     {
@@ -17,8 +17,8 @@ class Database
 
     public static function getInstance(): self
     {
-        if (is_null($this->conn)) {
-            $this->conn = new PDO("");
+        if (is_null(static::$conn)) {
+            static::$conn = new PDO("");
         }
 
         return new static();
