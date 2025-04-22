@@ -2,7 +2,7 @@
 
 namespace PHPAether\Enums;
 
-enum RouteType
+enum RequestType
 {
 
     case WEB;
