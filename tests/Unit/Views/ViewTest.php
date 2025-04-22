@@ -13,22 +13,60 @@ class ViewTest extends BaseTestCase
 {
 
     #[Test]
-    public function it_gets_view(): void
+    public function it_parses_variable(): void
     {
+        $address = [
+            'city'      => "Diao City",
+            'zip'       => "456123"
+        ];
         $props = [
-            "name"      => "John",
-            "email"     => "john@doe.com"
+            'name'      => "John",
+            'email'     => "john@doe.com",
+            'user'      => [
+                'id'    => "23abc"
+            ],
+            'address'   => $address
         ];
 
-        $view = new View('dashboard', TESTS_DIR . "/views/");
+        $viewTestDir = TESTS_DIR . "/views";
+        $view = new View('variables', $viewTestDir);
+        $expectedView = new View('variables_expected', $viewTestDir);
 
-        $expected = "Welcome, John (john@doe.com)!";
         $this->assertSame(
-            $expected,
+            $expectedView->render(),
             $view->render($props)
         );
 
     }
+
+    #[Test]
+    public function it_parses_for_loops(): void
+    {
+        $address = [
+            'city'      => "Diao City",
+            'zip'       => "456123"
+        ];
+        $props = [
+            'name'      => "John",
+            'email'     => "john@doe.com",
+            'user'      => [
+                'id'    => "23abc"
+            ],
+            'address'   => $address
+        ];
+
+        $viewTestDir = TESTS_DIR . "/views";
+        $view = new View('loop', $viewTestDir);
+        $expectedView = new View('loop_', $viewTestDir);
+
+        $this->assertSame(
+            $expectedView->render(),
+            $view->render($props)
+        );
+
+    }
+
+
 
 }
 

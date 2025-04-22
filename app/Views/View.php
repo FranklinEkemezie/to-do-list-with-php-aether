@@ -22,6 +22,7 @@ class View
      */
     public function __construct(string $viewName)
     {
+        $viewFile = ("$defaultDir/" ?? "/app/views/") . static::DEFAULT_DIR . "/$viewName.view.php";
         try { $defaultViewDir = Config::get('DEFAULT_VIEW_DIR'); }
         catch (ConfigNotFoundException) {
             throw new ViewException("Default view directory not found in app configuration");
@@ -38,19 +39,77 @@ class View
         $this->viewFile = $viewFile;
     }
 
+    protected static function parseVariables(string $template, array $props): string
+    {
+
+        // Matches
+        $abc        = "[a-zA-Z]";
+        $abc_       = "[a-zA-Z_]";
+        $abc123_    = "[a-zA-Z0-9_]";
+        $varName    = "({$abc}{$abc123_}+)";
+
+        $regex = "/\{\{ *$varName(\.$varName)? *\}\}/";
+        $replace_callback = function (array $match) use ($props) {
+            if (count($match) === 4) {
+                [ , $propName, , $propProperty] = $match;
+                $value = $props[$propName][$propProperty] ?? null;
+            } else {
+                [ , $propName] = $match;
+                $value = $props[$propName] ?? null;
+            }
+
+            if ($value === null && false) {
+                throw new ViewException("Undefined prop: {$match[1]}");
+            }
+
+            return $value;
+            return "<?php echo '$value'; ?>";
+        };
+
+        return preg_replace_callback($regex, $replace_callback, $template);
+    }
+
+    protected static function parseForLoops(string $template, array $props): string
+    {
+
+        // Matches
+        $abc        = "[a-zA-Z]";
+        $abc_       = "[a-zA-Z_]";
+        $abc123_    = "[a-zA-Z0-9_]";
+        $varName    = "({$abc}{$abc123_}*)";
+
+        $regex = "/@for *\(($varName:)? $varName of $varName*\) \{.+\}/";
+        $regex = "/@for *\(($varName\:)?/";
+        $replace_callback = function (array $match) use ($props) {
+            var_dump($match);
+            if (count($match) === 4) {
+                [ , $propName, , $propProperty] = $match;
+                $value = $props[$propName][$propProperty] ?? null   ;
+            } else {
+                [ , $propName] = $match;
+                $value = $props[$propName] ?? null;
+            }
+
+            if ($value === null && false) {
+                throw new ViewException("Undefined prop: {$match[1]}");
+            }
+
+            return $value;
+            return "<?php echo '$value'; ?>";
+        };
+
+        return preg_replace_callback($regex, $replace_callback, $template);
+
+    }
+
     public function render(array $props=[]): string
     {
         // Get the content of the file
         $view = file_get_contents($this->viewFile);
 
         // Extract props
-        $view = preg_replace_callback(
-            "/\{ *([a-zA-Z_][a-zA-Z0-9_]+) *\}/",
-            fn(array $match) => $props[$match[1]] ?? throw new ViewException(
-                "Undefined prop: {$match[1]}"
-            ),
-            $view
-        );
+        $view = static::parseForLoops($view, $props);
+        // $view = static::parseVariables($view, $props);
 
         return $view;
     }
