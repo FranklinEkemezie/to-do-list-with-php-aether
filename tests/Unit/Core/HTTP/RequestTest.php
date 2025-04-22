@@ -20,6 +20,9 @@ class RequestTest extends MockHTTPRequestTestCase
         ];
     }
 
+    /**
+     * @throws \Exception
+     */
     #[Test]
     #[DataProvider('requestTestCases')]
     public function it_gets_route_path(
@@ -31,9 +34,9 @@ class RequestTest extends MockHTTPRequestTestCase
         $_SERVER['REQUEST_METHOD'] = $requestMethod;
         $_SERVER['REQUEST_URI'] = $requestUri;
 
-        $request = new Request();
+        $request = new Request($_SERVER);
 
-        $this->assertSame($expectedRoutePath, $request->routePath);
+        $this->assertSame($expectedRoutePath, $request->path);
     }
 
 }
