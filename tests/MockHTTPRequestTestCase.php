@@ -2,22 +2,11 @@
 
 namespace PHPAether\Tests;
 
-use PHPAether\Core\App;
 use PHPAether\Core\HTTP\Request;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 
-class MockHTTPRequestTestCase extends TestCase
+class MockHTTPRequestTestCase extends BaseTestCase
 {
-    protected static App $APP;
-
-    public static function setUpBeforeClass(): void
-    {
-        parent::setUpBeforeClass();
-
-        // Bootstrap application
-        static::$APP = require_once __DIR__ . '/bootstrap/bootstrap.php';
-    }
 
     public static function mockHTTPRequestTestCases(): \Generator
     {
