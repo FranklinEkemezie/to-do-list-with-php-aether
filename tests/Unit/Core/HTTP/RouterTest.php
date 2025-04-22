@@ -1,12 +1,15 @@
 <?php
 
-declare(strict_types=1);
+namespace PHPAether\Tests\Unit\Core\HTTP;
 
-namespace Core\HTTP;
+require_once dirname(__DIR__, 3) . '/bootstrap/constants.php';
 
-use PHPAether\Core\HTTP\Request;
 use PHPAether\Core\HTTP\Router;
-use PHPAether\Exceptions\FileNotFoundException;
+use PHPAether\Enums\HTTPRequestMethod;
+use PHPAether\Enums\RequestType;
+use PHPAether\Exceptions\RouterExceptions\MethodNotAllowedException;
+use PHPAether\Exceptions\RouterExceptions\RouteNotFoundException;
+use PHPAether\Exceptions\RouterExceptions\RouterException;
 use PHPAether\Tests\MockHTTPRequestTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,61 +20,169 @@ class RouterTest extends MockHTTPRequestTestCase
 
     protected Router $router;
 
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
 
         $this->router = new Router();
-        $this->router->registerRoutes(static::TEST_ROUTES);
+    }
+
+    public static function registersRouteDataProvider(): array
+    {
+        $action1 = fn() => 'Action 1';
+        $action2 = fn() => 'Action 2';
+
+        return [
+            [
+                'route'     => '/index',
+                'action'    => $action1,
+                'middlewares'=> []
+            ],
+            [
+                'route'     => '/books/:id',
+                'action'    => $action2
+            ]
+        ];
+    }
+
+    public static function buildItRegistersRouteExpected(string $route, HTTPRequestMethod $method, callable $action, array $middlewares=[]): array
+    {
+        return [
+            "$route"    => [
+                'action'        => $action,
+                'middlewares'   => $middlewares
+            ]
+        ];
     }
 
     #[Test]
-    public function it_registers_routes_from_routes(): void
+    #[DataProvider('registersRouteDataProvider')]
+    public function it_registers_get_route(string $route, callable $action, array $middlewares=[]): void
     {
-        $router = new Router();
-        $router->registerRoutes(static::TEST_ROUTES);
+        $router = $this->router->get($route, $action);
+        $expected = static::buildItRegistersRouteExpected($route, HTTPRequestMethod::GET, $action, $middlewares);
 
-        $this->assertSame(
-            static::TEST_ROUTES,
-            $router->getRegisteredRoutes()
-        );
-
+        $this->assertSame($expected, $router->getRegisteredRoutes(RequestType::WEB, HTTPRequestMethod::GET));
     }
 
-    /**
-     * @throws FileNotFoundException
-     */
     #[Test]
-    public function it_registers_routes_from_route_file(): void
+    #[DataProvider('registersRouteDataProvider')]
+    public function it_registers_post_route(string $route, callable $action, array $middlewares=[]): void
     {
-        $router = new Router();
 
-        $routeFilename = TESTS_DIR . "/config/routes.json";
-        $router->registerRoutesFromRouteFile($routeFilename);
+        $router = $this->router->post($route, $action);
+        $expected = static::buildItRegistersRouteExpected($route, HTTPRequestMethod::POST, $action, $middlewares);
 
-        $routes = json_decode(file_get_contents($routeFilename), true);
-        $this->assertEquals($routes, $router->getRegisteredRoutes());
+        $this->assertSame($expected, $router->getRegisteredRoutes(RequestType::WEB, HTTPRequestMethod::POST));
+    }
+
+    #[Test]
+    #[DataProvider('registersRouteDataProvider')]
+    public function it_registers_put_route(string $route, callable $action, array $middlewares=[]): void
+    {
+        $router = $this->router->put($route, $action);
+        $expected = static::buildItRegistersRouteExpected($route, HTTPRequestMethod::PUT, $action, $middlewares);
+
+        $this->assertSame($expected, $router->getRegisteredRoutes(RequestType::WEB, HTTPRequestMethod::PUT));
+    }
+
+    #[Test]
+    #[DataProvider('registersRouteDataProvider')]
+    public function it_registers_patch_route(string $route, callable $action, array $middlewares=[]): void
+    {
+        $router = $this->router->patch($route, $action);
+        $expected = static::buildItRegistersRouteExpected($route, HTTPRequestMethod::PATCH, $action, $middlewares);
+
+        $this->assertSame($expected, $router->getRegisteredRoutes(RequestType::WEB, HTTPRequestMethod::PATCH));
+    }
+
+    #[Test]
+    #[DataProvider('registersRouteDataProvider')]
+    public function it_registers_delete_route(string $route, callable $action, array $middlewares=[]): void
+    {
+        $router = $this->router->delete($route, $action);
+        $expected = static::buildItRegistersRouteExpected($route, HTTPRequestMethod::DELETE, $action, $middlewares);
+
+        $this->assertSame($expected, $router->getRegisteredRoutes(RequestType::WEB, HTTPRequestMethod::DELETE));
+    }
+
+    #[Test]
+    public function it_registers_web_routes_from_file(): void
+    {
+        $this->router->registerWebRoutesFromFile(TESTS_DIR . '/config/routes/web.php');
+        $this->assertNotEmpty($this->router->getRegisteredRoutes(RequestType::WEB));
+    }
+
+    #[Test]
+    public function it_registers_api_routes_from_file(): void
+    {
+        $this->router->registerApiRoutesFromFile(TESTS_DIR . '/config/routes/api.php');
+        $this->assertNotEmpty($this->router->getRegisteredRoutes(RequestType::API));
+    }
+
+    #[Test]
+    public function it_registers_cli_routes_from_file(): void
+    {
+        $this->router->registerCliRoutesFromFile(TESTS_DIR . '/config/routes/cli.php');
+        $this->assertNotEmpty($this->router->getRegisteredRoutes(RequestType::CLI));
     }
 
     /**
      * @throws Exception
+     * @throws RouterException
      */
     #[Test]
-    #[DataProvider('httpRequestDataProvider')]
-    public function it_routes_request(string $method, string $route, array $expected)
+    #[DataProvider('mockHTTPRequestTestCases')]
+    public function it_routes_request_to_route(string $url, string $method, ?array $expected=[])
     {
-        // Set up HTTP request test case
-        static::setUpHTTPRequestTest($route, $method);
+        $expectedRoute = $expected['router']['route'] ?? null;
 
-        ['action' => $expectedAction] = $expected;
+        // Mock a request object; register routes
+        $request = $this->createMockRequest($url, $method);
+        $this->router->registerRoutesFromFiles(TESTS_DIR . '/config/routes');
 
-        $requestMock = $this->getMockBuilder(Request::class)
-            ->setConstructorArgs([$_SERVER])
-            ->onlyMethods([])
-            ->getMock()
-        ;
+        $actualRoute = $this->router->route($request)['route'];
+        $this->assertSame($expectedRoute, $actualRoute);
+    }
 
-        [$controllerName, $action] = $this->router->route($requestMock);
-        $this->assertSame($expectedAction, [$controllerName, $action]);
+    /**
+     * @throws RouterException
+     */
+    #[Test]
+    public function it_throws_method_not_allowed_for_invalid_routes(): void
+    {
+        // Register routes
+        $this->router->post('/tests/some/login', fn() => '');
+
+        // Hit the route but with a different method
+        $request = $this->createMockRequest('/tests/some/login', 'GET');
+
+        $this->expectException(MethodNotAllowedException::class);
+        $this->router->route($request);
+    }
+
+    /**
+     * @throws RouterException
+     */
+    #[Test]
+    public function it_throws_route_not_found_for_invalid_routes(): void
+    {
+        $this->expectException(RouteNotFoundException::class);
+        $this->router->route($this->createMockRequest('/tests/some/products/2', 'GET'));
+    }
+
+    /**
+     * @throws RouterException
+     */
+    #[Test]
+    public function it_matches_wildcard_route(): void
+    {
+        // Register a wildcard route
+        $this->router->get('/tests/books/:id', fn() => '');
+        $this->assertEquals(
+            ['id' => 5],
+            $this->router->route($this->createMockRequest('/tests/books/5', 'GET'))['params']
+        );
+
     }
 }

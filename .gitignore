@@ -3,4 +3,6 @@
 .todo
 /scratchpad/
 .idea/
+.idea/phpunit.xml
+.idea/php.xml
 .phpunit.result.cache

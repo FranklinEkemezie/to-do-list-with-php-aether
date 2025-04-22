@@ -4,42 +4,43 @@ declare(strict_types=1);
 
 namespace PHPAether\Core\HTTP;
 
+
 use Exception;
+use PHPAether\Enums\HTTPRequestMethod;
+use PHPAether\Enums\RequestType;
 
 class Request
 {
 
-    public readonly string $route;
-    public readonly string $method;
+    public readonly string $path;
+    public readonly HTTPRequestMethod $method;
+    public readonly RequestType $type;
 
     /**
      * @throws Exception
      */
-    public function __construct(
-        array $serverVariables
-    )
+    public function __construct(?array $serverVariables=null, RequestType $requestType=RequestType::WEB)
     {
-        if (! array_key_exists('REQUEST_URI', $serverVariables)) {
-            throw new \InvalidArgumentException(
-                'Parameter $serverVariables is missing required key: REQUEST_URI'
-            );
-        }
-        $requestUri = $serverVariables['REQUEST_URI'];
+        $serverVariables ??= $_SERVER;
 
-        if (! array_key_exists('REQUEST_METHOD', $serverVariables)) {
-            throw new \InvalidArgumentException(
-                'Parameter $serverVariables is missing required key: REQUEST_URI'
-            );
+        $requestUri = $serverVariables['REQUEST_URI'] ?? null;
+        if (! $requestUri) {
+            throw new \InvalidArgumentException("Missing required key 'REQUEST_URI' in \$serverVariables");
         }
-        $requestMethod = $serverVariables['REQUEST_METHOD'];
+
+        $requestMethod = $serverVariables['REQUEST_METHOD'] ?? null;
+        if (! $requestMethod) {
+            throw new \InvalidArgumentException("Missing required key 'REQUEST_METHOD' in \$serverVariables");
+        }
 
         $routeInfo = parse_url($requestUri);
         if ($routeInfo === false) {
             throw new Exception('Could not parse request url. URL may be malformed');
         }
 
-        $this->route = $routeInfo['path'];
-        $this->method = strtoupper($requestMethod);
+        $this->path     = (string) $routeInfo['path'];
+        $this->method   = HTTPRequestMethod::tryFrom(strtoupper($requestMethod));
+        $this->type     = $requestType;
     }
 
 
