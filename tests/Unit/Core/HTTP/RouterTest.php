@@ -2,8 +2,6 @@
 
 namespace PHPAether\Tests\Unit\Core\HTTP;
 
-require_once dirname(__DIR__, 3) . '/bootstrap/constants.php';
-
 use PHPAether\Core\HTTP\Router;
 use PHPAether\Enums\HTTPRequestMethod;
 use PHPAether\Enums\RequestType;
