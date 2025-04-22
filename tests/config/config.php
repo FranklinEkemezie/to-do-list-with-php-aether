@@ -22,6 +22,6 @@ return [
      * View Configuration
      */
     'VIEW'  => [
-        'DEFAULT_VIEW_DIR'  => TESTS_DIR . "/views"
+        'DEFAULT_VIEW_DIR'  => TESTS_DIR . '/views'
     ]
 ];

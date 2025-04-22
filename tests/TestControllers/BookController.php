@@ -4,7 +4,7 @@ namespace PHPAether\Tests\TestControllers;
 
 use PHPAether\Controllers\Controller;
 
-class HomeController extends Controller
+class BookController extends Controller
 {
 
 }
