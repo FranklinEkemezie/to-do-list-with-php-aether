@@ -1,10 +1,8 @@
 <?php
 
-return [
+use PHPAether\Core\HTTP\Router;
 
-    '/users'    => [
-        'controller'    => 'User',
-        'action'        => 'getUser',
-        'methods'       => ['GET']
-    ]
-];
+return (function (Router $router) {
+
+
+});
