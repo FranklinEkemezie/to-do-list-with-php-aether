@@ -1,7 +1,8 @@
 <?php
 
-namespace Core\HTTP;
+namespace PHPAether\Tests\Unit\Core\HTTP;
 
+use Exception;
 use PHPAether\Core\HTTP\Request;
 use PHPAether\Tests\MockHTTPRequestTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -10,33 +11,41 @@ use PHPUnit\Framework\Attributes\Test;
 class RequestTest extends MockHTTPRequestTestCase
 {
 
-    public static function requestTestCases(): array
+    /**
+     * @throws Exception
+     */
+    public static function getRequest(string $url, string $method): Request
     {
-        return [
-            ['/', 'GET', '/'],
-            ['/login?r_url=/user/dashboard', 'POST', '/login'],
-            ['/auth/otp/verify', 'GET', '/auth/otp/verify'],
-            ['/user/profile', 'PUT', '/user/profile']
-        ];
+        $_SERVER['REQUEST_URI']     = $url;
+        $_SERVER['REQUEST_METHOD']  = $method;
+
+        return new Request($_SERVER);
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     #[Test]
-    #[DataProvider('requestTestCases')]
-    public function it_gets_route_path(
-        string $requestUri,
-        string $requestMethod,
-        string $expectedRoutePath
-    )
+    #[DataProvider('mockHTTPRequestTestCases')]
+    public function it_gets_route_path(callable $requestBuilder, array $expected): void
     {
-        $_SERVER['REQUEST_METHOD'] = $requestMethod;
-        $_SERVER['REQUEST_URI'] = $requestUri;
+        $expectedPath = static::getExpectedValue($expected, 'request', 'path');
+        $this->assertSame($expectedPath, $requestBuilder($this)->path);
+    }
 
-        $request = new Request($_SERVER);
+    /**
+     * @throws Exception
+     */
+    #[Test]
+    #[DataProvider('mockHTTPRequestTestCases')]
+    public function it_gets_route_params(callable $requestBuilder, array $expected): void
+    {
+        $expectedParams = static::getExpectedValue($expected, 'request', 'params', []);
 
-        $this->assertSame($expectedRoutePath, $request->path);
+        $request = $requestBuilder($this);
+        static::$APP->router->route($request);
+
+        $this->assertSame($expectedParams, $request->getData);
     }
 
 }

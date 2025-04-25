@@ -11,7 +11,6 @@ use PHPAether\Exceptions\RouterExceptions\RouterException;
 use PHPAether\Tests\MockHTTPRequestTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\Exception;
 
 class RouterTest extends MockHTTPRequestTestCase
 {
@@ -126,17 +125,19 @@ class RouterTest extends MockHTTPRequestTestCase
     }
 
     /**
-     * @throws Exception
-     * @throws RouterException
+     * @param callable $requestBuilder
+     * @param array|null $expected
+     * @throws MethodNotAllowedException
+     * @throws RouteNotFoundException
      */
     #[Test]
     #[DataProvider('mockHTTPRequestTestCases')]
-    public function it_routes_request_to_route(string $url, string $method, ?array $expected=[])
+    public function it_routes_request_to_route(callable $requestBuilder, ?array $expected=[])
     {
         $expectedRoute = $expected['router']['route'] ?? null;
 
         // Mock a request object; register routes
-        $request = $this->createMockRequest($url, $method);
+        $request = $requestBuilder($this);
         $this->router->registerRoutesFromFiles(TESTS_DIR . '/config/routes');
 
         $actualRoute = $this->router->route($request)['route'];
@@ -166,7 +167,8 @@ class RouterTest extends MockHTTPRequestTestCase
     public function it_throws_route_not_found_for_invalid_routes(): void
     {
         $this->expectException(RouteNotFoundException::class);
-        $this->router->route($this->createMockRequest('/tests/some/products/2', 'GET'));
+        $request = $this->createMockRequest('/tests/some/products/2', 'GET');
+        $this->router->route($request);
     }
 
     /**
@@ -177,10 +179,8 @@ class RouterTest extends MockHTTPRequestTestCase
     {
         // Register a wildcard route
         $this->router->get('/tests/books/:id', fn() => '');
-        $this->assertEquals(
-            ['id' => 5],
-            $this->router->route($this->createMockRequest('/tests/books/5', 'GET'))['params']
-        );
+        $request = $this->createMockRequest('/tests/books/5', 'GET');
 
+        $this->assertEquals(['id' => 5], $this->router->route($request)['params']);
     }
 }
