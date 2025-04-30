@@ -43,9 +43,10 @@ class RequestTest extends MockHTTPRequestTestCase
         $expectedParams = static::getExpectedValue($expected, 'request', 'params', []);
 
         $request = $requestBuilder($this);
+
+        print_r($request->getData());
         static::$APP->router->route($request);
 
-        $this->assertSame($expectedParams, $request->getData);
+        $this->assertSame($expectedParams, $request->getData());
     }
-
 }

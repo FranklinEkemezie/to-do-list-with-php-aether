@@ -22,7 +22,7 @@ class Response
         $this->sendHeaders();
 
         // send status code
-        http_send_status($this->status->value);
+        http_response_code($this->status->value);
 
         // send body
         echo $this->body;
@@ -32,9 +32,9 @@ class Response
 
     public function sendHeaders(): void
     {
-        array_walk($this->headers, function ($value, $key) {
+        foreach ($this->headers as $key => $value) {
             header("$key='$value'");
-        });
+        }
     }
 
     public function __toString(): string

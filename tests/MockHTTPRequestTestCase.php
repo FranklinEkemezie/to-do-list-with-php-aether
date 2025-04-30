@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace PHPAether\Tests;
 
@@ -35,11 +36,15 @@ class MockHTTPRequestTestCase extends BaseTestCase
         $_SERVER['REQUEST_URI'] = $url;
         $_SERVER['REQUEST_METHOD'] = $method;
 
-        if ($method === 'GET') $_GET = $data;
-        else $_POST = $data;
+        if ($method === 'GET')
+            $_GET = $data;
+        else
+            $_POST = $data;
 
         return $this->getMockBuilder(Request::class)
             ->setConstructorArgs([$_SERVER])
+            ->disableOriginalClone()
+            ->onlyMethods([])
             ->getMock();
     }
 

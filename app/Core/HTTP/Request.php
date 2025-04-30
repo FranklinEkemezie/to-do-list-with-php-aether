@@ -1,9 +1,7 @@
 <?php
-
 declare(strict_types=1);
 
 namespace PHPAether\Core\HTTP;
-
 
 use Exception;
 use PHPAether\Enums\HTTPRequestMethod;
@@ -28,7 +26,7 @@ class Request
      * @var array The request data.
      * Stores the URL placeholder values, query parameter and `$_GET` values
      */
-    public readonly array $data;
+    protected array $data;
 
     /**
      * @throws Exception
@@ -59,7 +57,7 @@ class Request
         $this->path     = (string) $routeInfo['path'];
         $this->method   = HTTPRequestMethod::tryFrom(strtoupper($requestMethod));
         $this->type     = $requestType;
-        $this->data     = array_merge($queryParams, $_GET);
+        $this->data     = [...$_GET, ...$queryParams];
     }
 
     /**
@@ -84,11 +82,12 @@ class Request
      */
     public function setData(array $data): self
     {
-        if (empty($data) || array_is_list($data)) {
+        if (! empty($data) && array_is_list($data)) {
             throw new \InvalidArgumentException('Invalid data provided');
         }
 
-        $this->data = array_merge($this->data, $data);
+        $this->data = [...$this->data, ...$data];
+
         return $this;
     }
 
