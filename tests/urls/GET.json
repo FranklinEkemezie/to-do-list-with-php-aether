@@ -1,0 +1,65 @@
+[
+  {
+    "url": "/tests/home",
+    "expected": {
+      "request": {
+        "path": "/tests/home"
+      },
+      "router": {
+        "route": "/tests/home"
+      }
+    }
+  },
+  {
+    "url": "/tests/books?page=2&sort=name",
+    "expected": {
+      "request": {
+        "path": "/tests/books",
+        "params": {
+          "page": "2",
+          "sort": "name"
+        }
+      },
+      "router": {
+        "route": "/tests/books"
+      }
+    }
+  },
+  {
+    "url": "/tests/books",
+    "info": {
+      "data": {
+        "city": "New York",
+        "page": "4",
+        "size": "20"
+      }
+    },
+    "expected": {
+      "request": {
+        "path": "/tests/books",
+        "params": {
+          "city": "New York",
+          "page": "4",
+          "size": "20"
+        }
+      },
+      "router": {
+        "route": "/tests/books"
+      }
+    }
+  },
+  {
+    "url": "/tests/books/5",
+    "expected": {
+      "request": {
+        "path": "/tests/books/5",
+        "params": {
+          "id": "5"
+        }
+      },
+      "router": {
+        "route": "/tests/books/:id"
+      }
+    }
+  }
+]

@@ -348,12 +348,16 @@ class Router
      * @throws MethodNotAllowedException
      * @throws RouteNotFoundException
      */
-    public function route(Request $request): array
+    public function route(Request &$request): array
     {
         $routes = $this->getRegisteredRoutes($request->type, $request->method);
         foreach ($routes as $route => $routeInfo) {
             $params = $this->matchRequestPathToRoute($request->path, $route);
             if ($params !== false) {
+
+                // Set the params as part of request data
+                $request->setData($params);
+
                 return [
                     'route'         => $route,
                     'action'        => $routeInfo['action'],
