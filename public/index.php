@@ -1,11 +1,11 @@
 <?php
+declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/vendor/autoload.php';
+require_once dirname(__DIR__) . '/bootstrap/constants.php';
 
 use PHPAether\Core\HTTP\Request;
 use PHPAether\Enums\RequestType;
-
-require_once dirname(__DIR__) . '/bootstrap/constants.php';
-
 
 try {
     $app        = require_once ROOT_DIR . '/bootstrap/bootstrap.php';
