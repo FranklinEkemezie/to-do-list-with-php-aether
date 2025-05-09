@@ -1,15 +1,17 @@
 <?php
+declare(strict_types=1);
 
 namespace PHPAether\Core\HTTP;
 
 use PHPAether\Enums\ResponseStatus;
+use PHPAether\Interfaces\RenderableBodyInterface;
 
 class Response
 {
 
     public function __construct(
         public readonly ResponseStatus $status,
-        public readonly string $body,
+        public readonly RenderableBodyInterface|string $body,
         public readonly array $headers=[]
     )
     {
@@ -25,7 +27,8 @@ class Response
         http_response_code($this->status->value);
 
         // send body
-        echo $this->body;
+        $body = $this->body;
+        echo is_string($body) ? $body : $body->toString();
 
         exit();
     }
