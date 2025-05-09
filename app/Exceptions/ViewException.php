@@ -1,8 +1,7 @@
 <?php
+declare(strict_types=1);
 
 namespace PHPAether\Exceptions;
-
-use PHPAether\Exceptions\Exception;
 
 class ViewException extends Exception
 {

@@ -1,7 +1,11 @@
 <?php
+declare(strict_types=1);
 
-use PHPAether\Core\HTTP\Request;
+require_once ROOT_DIR . '/vendor/autoload.php';
+
 use PHPAether\Core\HTTP\Router;
+use PHPAether\Tests\TestControllers\BookController;
+use PHPAether\Tests\TestControllers\HomeController;
 
 return (function (Router $router) {
 
@@ -9,10 +13,10 @@ return (function (Router $router) {
      * Define routes for testing routing functionality
      ---------------------------------------------------------- */
     $router->group('/tests', function (Router $router) {
-        $router->get('/home', fn() => 'Home');
+        $router->get('/home', [HomeController::class, 'index']);
 
-        $router->get('/books', fn() => 'Books');
-        $router->get('/books/:id', fn(Request $request, string $id) => 'Book with ID: ' . $id);
+        $router->get('/books', [BookController::class, 'index']);
+        $router->get('/books/:id', [BookController::class, 'getBook']);
 
         $router->get('/register', fn() => 'Register Form');
         $router->post('/register', fn() => 'Register');
