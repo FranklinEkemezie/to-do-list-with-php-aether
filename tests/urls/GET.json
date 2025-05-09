@@ -7,6 +7,9 @@
       },
       "router": {
         "route": "/tests/home"
+      },
+      "view": {
+        "body": "Home Page"
       }
     }
   },
@@ -22,6 +25,9 @@
       },
       "router": {
         "route": "/tests/books"
+      },
+      "view": {
+        "body": "Books with IDs: 3, 8, 13"
       }
     }
   },
@@ -45,6 +51,9 @@
       },
       "router": {
         "route": "/tests/books"
+      },
+      "view": {
+        "body": "Books with IDs: 3, 8, 13"
       }
     }
   },
@@ -59,6 +68,9 @@
       },
       "router": {
         "route": "/tests/books/:id"
+      },
+      "view": {
+        "body": "Book with ID: 5"
       }
     }
   }
