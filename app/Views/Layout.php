@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace PHPAether\Views;
 
-class Layout extends View
+use PHPAether\Tests\Unit\Views\Pages\Book;
+
+abstract class Layout extends View
 {
 
-    public function __construct(
-    )
-    {
+    private const DEFAULT_DIR = 'layouts';
 
-    }
 }

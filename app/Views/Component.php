@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace PHPAether\Views;
 
-class Component extends View
+abstract class Component extends View
 {
 
-    public function __construct(
-    )
-    {
+    private const DEFAULT_DIR = 'components';
 
-    }
 }

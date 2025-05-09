@@ -63,9 +63,9 @@ class Request
     /**
      * Get a request data
      * @param string|null $key
-     * @return array
+     * @return string|array
      */
-    public function getData(?string $key=null): array
+    public function getData(?string $key=null): string|array
     {
         if (is_null($key)) return $this->data;
         if (! isset($this->data[$key])) {

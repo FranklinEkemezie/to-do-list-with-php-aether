@@ -1,72 +1,36 @@
 <?php
-
 declare(strict_types=1);
 
 namespace PHPAether\Tests\Unit\Views;
 
+use PHPAether\Tests\MockHTTPRequestTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 
-use PHPAether\Tests\BaseTestCase;
-use PHPAether\Views\View;
-
-class ViewTest extends BaseTestCase
+class ViewTest extends MockHTTPRequestTestCase
 {
 
-    #[Test]
-    public function it_parses_variable(): void
+    public static function viewTestDataProvider(): \Generator
     {
-        $address = [
-            'city'      => "Diao City",
-            'zip'       => "456123"
-        ];
-        $props = [
-            'name'      => "John",
-            'email'     => "john@doe.com",
-            'user'      => [
-                'id'    => "23abc"
-            ],
-            'address'   => $address
-        ];
+        foreach (static::mockHTTPRequestTestCases() as $testCase) {
+            ['requestBuilder' => $requestBuilder, 'expected' => $expected] = $testCase;
 
-        $viewTestDir = TESTS_DIR . "/views";
-        $view = new View('variables', $viewTestDir);
-        $expectedView = new View('variables_expected', $viewTestDir);
+            $viewBuilder = fn(self $test) => (
+                static::$APP->run($requestBuilder($test))->body
+            );
 
-        $this->assertSame(
-            $expectedView->render(),
-            $view->render($props)
-        );
-
+            yield [
+                'viewBuilder'   => $viewBuilder,
+                'expected'      => $expected['view'] ?? []
+            ];
+        }
     }
 
     #[Test]
-    public function it_parses_for_loops(): void
+    #[DataProvider('viewTestDataProvider')]
+    public function it_renders_view(callable $viewBuilder, array $expected): void
     {
-        $address = [
-            'city'      => "Diao City",
-            'zip'       => "456123"
-        ];
-        $props = [
-            'name'      => "John",
-            'email'     => "john@doe.com",
-            'user'      => [
-                'id'    => "23abc"
-            ],
-            'address'   => $address
-        ];
-
-        $viewTestDir = TESTS_DIR . "/views";
-        $view = new View('loop', $viewTestDir);
-        $expectedView = new View('loop_', $viewTestDir);
-
-        $this->assertSame(
-            $expectedView->render(),
-            $view->render($props)
-        );
-
+        $this->assertSame($expected['body'] ?? null, (string) $viewBuilder($this));
     }
-
-
-
 }
 

@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/bootstrap/constants.php';
 require_once ROOT_DIR . '/vendor/autoload.php';
+require_once dirname(__DIR__) . '/bootstrap/constants.php';
+require_once ROOT_DIR . '/bootstrap/helpers.php';
 
 // Set up config
 \PHPAether\Utils\Config::load(TESTS_DIR . '/config/config.php');
