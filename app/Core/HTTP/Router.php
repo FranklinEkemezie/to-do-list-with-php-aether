@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPAether\Core\HTTP;
 
+use Closure;
 use PHPAether\Enums\HTTPRequestMethod;
 use PHPAether\Enums\RequestType;
 use PHPAether\Exceptions\RouterExceptions\MethodNotAllowedException;
@@ -15,6 +16,11 @@ class Router
 
     protected array $routes = [];
     private ?string $routePrefix = null;
+
+    public const REQUEST_ROUTE_INFO_ROUTE = 4320;
+    public const REQUEST_ROUTE_INFO_ACTION = 4231;
+    public const REQUEST_ROUTE_INFO_MIDDLEWARES = 4232;
+    public const REQUEST_ROUTE_PARAMS = 4233;
 
     public function __construct(
         protected RequestType $defaultRouteType=RequestType::WEB
@@ -41,11 +47,11 @@ class Router
     /**
      * Register GET route
      * @param string $route
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return self
      */
-    public function get(string $route, callable $action, array $middlewares=[]): self
+    public function get(string $route, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, HTTPRequestMethod::GET, $action, $middlewares);
     }
@@ -53,11 +59,11 @@ class Router
     /**
      * Register POST route
      * @param string $route
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return self
      */
-    public function post(string $route, callable $action, array $middlewares=[]): self
+    public function post(string $route, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, HTTPRequestMethod::POST, $action, $middlewares);
     }
@@ -65,11 +71,11 @@ class Router
     /**
      * Register PUT route
      * @param string $route
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return self
      */
-    public function put(string $route, callable $action, array $middlewares=[]): self
+    public function put(string $route, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, HTTPRequestMethod::PUT, $action, $middlewares);
     }
@@ -77,11 +83,11 @@ class Router
     /**
      * Register PATCH route
      * @param string $route
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return self
      */
-    public function patch(string $route, callable $action, array $middlewares=[]): self
+    public function patch(string $route, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, HTTPRequestMethod::PATCH, $action, $middlewares);
     }
@@ -89,11 +95,11 @@ class Router
     /**
      * Register DELETE route
      * @param string $route
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return self
      */
-    public function delete(string $route, callable $action, array $middlewares=[]): self
+    public function delete(string $route, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, HTTPRequestMethod::DELETE, $action, $middlewares);
     }
@@ -102,11 +108,11 @@ class Router
      * Register a web route
      * @param string $route
      * @param HTTPRequestMethod $method
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return $this
      */
-    public function registerWebRoute(string $route, HTTPRequestMethod $method, callable $action, array $middlewares=[]): self
+    public function registerWebRoute(string $route, HTTPRequestMethod $method, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, $method, $action, $middlewares, RequestType::WEB);
     }
@@ -115,11 +121,11 @@ class Router
      * Register an API route
      * @param string $route
      * @param HTTPRequestMethod $method
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return $this
      */
-    public function registerApiRoute(string $route, HTTPRequestMethod $method, callable $action, array $middlewares=[]): self
+    public function registerApiRoute(string $route, HTTPRequestMethod $method, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, $method, $action, $middlewares, RequestType::API);
     }
@@ -128,11 +134,11 @@ class Router
      * Register a CLI route
      * @param string $route
      * @param HTTPRequestMethod $method
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @return $this
      */
-    public function registerCliRoute(string $route, HTTPRequestMethod $method, callable $action, array $middlewares=[]): self
+    public function registerCliRoute(string $route, HTTPRequestMethod $method, array|string|Closure $action, array $middlewares=[]): self
     {
         return $this->registerRoute($route, $method, $action, $middlewares, RequestType::CLI);
     }
@@ -141,12 +147,12 @@ class Router
      * Register a route
      * @param string $route
      * @param HTTPRequestMethod $method
-     * @param callable $action
+     * @param array|string|Closure $action
      * @param array $middlewares
      * @param RequestType|null $requestType
      * @return $this
      */
-    public function registerRoute(string $route, HTTPRequestMethod $method, callable $action, array $middlewares=[], ?RequestType $requestType=null): self
+    public function registerRoute(string $route, HTTPRequestMethod $method, array|string|Closure $action, array $middlewares=[], ?RequestType $requestType=null): self
     {
         $requestType ??= $this->defaultRouteType;
 
@@ -338,6 +344,23 @@ class Router
         }
 
         return $params;
+    }
+
+    /**
+     * Get a value using the key from the request route info.
+     * @param array $requestRouteInfo
+     * @param int|null $option
+     * @return mixed
+     */
+    public static function requestRouteInfo(array $requestRouteInfo, ?int $option=null): mixed
+    {
+        return match ($option) {
+            self::REQUEST_ROUTE_INFO_ROUTE, null=> $requestRouteInfo['route'],
+            self::REQUEST_ROUTE_INFO_ACTION     => $requestRouteInfo['action'],
+            self::REQUEST_ROUTE_INFO_MIDDLEWARES=> $requestRouteInfo['middlewares'],
+            self::REQUEST_ROUTE_PARAMS          => $requestRouteInfo['params'],
+            default     => $requestRouteInfo
+        };
     }
 
     /**
