@@ -8,7 +8,7 @@ require_once ROOT_DIR . '/vendor/autoload.php';
 
 // Instantiate dependencies
 $router = (new \PHPAether\Core\HTTP\Router())
-    ->registerWebRoutesFromFile(ROOT_DIR . '/tests/config/routes/web.php')
+    ->registerWebRoutesFromFile(ROOT_DIR . '/config/routes/web.php')
     ->registerApiRoutesFromFile(ROOT_DIR . '/config/routes/api.php')
     ->registerCliRoutesFromFile(ROOT_DIR . '/config/routes/cli.php');
 

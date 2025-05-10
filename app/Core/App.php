@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace PHPAether\Core;
@@ -18,9 +19,7 @@ class App
     public function __construct(
         public readonly Router $router,
         public readonly string $database,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Resolve the route action to a callable

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace PHPAether\Views;
@@ -16,10 +17,8 @@ abstract class View extends RenderableBodyInterface
     ];
 
     public function __construct(
-        public readonly array $props=[]
-    )
-    {
-    }
+        public readonly array $props = []
+    ) {}
 
     abstract function render(): string;
 
@@ -50,10 +49,6 @@ abstract class View extends RenderableBodyInterface
      */
     public function __get(string $name)
     {
-        if (empty($this->props[$name])) {
-            throw new ViewException('Invalid prop: ' . $name);
-        }
-
-        return $this->props[$name];
+        return $this->props[$name] ?? null;
     }
 }
